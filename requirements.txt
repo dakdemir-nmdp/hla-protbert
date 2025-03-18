@@ -1,0 +1,17 @@
+numpy>=1.19.0
+pandas>=1.1.0
+torch>=1.7.0
+transformers>=4.0.0
+scikit-learn>=0.24.0
+matplotlib>=3.3.0
+seaborn>=0.11.0
+pyyaml>=5.4.0
+tqdm>=4.50.0
+biopython>=1.78
+requests>=2.25.0
+
+# Optional dependencies
+# Uncomment if needed:
+# umap-learn>=0.5.1     # For dimensionality reduction and visualization
+# reportlab>=3.5.0      # For PDF report generation
+# pyard>=0.2.0          # For HLA nomenclature resolution
