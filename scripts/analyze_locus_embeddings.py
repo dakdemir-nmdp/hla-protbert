@@ -10,6 +10,7 @@ import sys
 import argparse
 import logging
 import time
+import traceback
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -19,12 +20,30 @@ from datetime import datetime
 from tqdm import tqdm
 
 # Add parent directory to path
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+script_dir = Path(__file__).resolve().parent
+project_dir = script_dir.parent
+sys.path.insert(0, str(project_dir))
 
 # Import our modules
-from src.models.protbert import ProtBERTEncoder
-from src.analysis.visualization import HLAEmbeddingVisualizer
-from src.utils.logging import setup_logging
+try:
+    from src.models.protbert import ProtBERTEncoder
+    from src.analysis.visualization import HLAEmbeddingVisualizer
+    from src.utils.logging import setup_logging
+except ImportError as e:
+    print(f"Error importing modules: {e}")
+    print("Make sure you're running the script from the project root directory.")
+    sys.exit(1)
+
+# Check for required packages
+try:
+    import umap
+    import sklearn
+    from sklearn.decomposition import PCA
+    from sklearn.manifold import TSNE
+except ImportError as e:
+    print(f"Required package not installed: {e}")
+    print("Please install required packages with: pip install scikit-learn umap-learn")
+    sys.exit(1)
 
 def parse_args():
     """Parse command line arguments"""
@@ -116,6 +135,12 @@ def parse_args():
         help="Enable verbose logging"
     )
     
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode (extra checks and exception details)"
+    )
+    
     return parser.parse_args()
 
 def make_output_dirs(base_dir: str) -> Tuple[Path, Path, Path]:
@@ -133,6 +158,48 @@ def make_output_dirs(base_dir: str) -> Tuple[Path, Path, Path]:
     
     return embeddings_dir, plots_dir, reports_dir
 
+def check_environment(args):
+    """Check environment and file paths before starting analysis"""
+    logger = logging.getLogger("environment_check")
+    success = True
+    
+    # Check sequence file
+    sequence_file = Path(args.sequence_file)
+    if not sequence_file.exists():
+        logger.error(f"Sequence file not found: {sequence_file}")
+        success = False
+    else:
+        logger.info(f"Sequence file found: {sequence_file}")
+        
+    # Check cache directory
+    cache_dir = Path(args.cache_dir)
+    if not cache_dir.exists():
+        logger.warning(f"Cache directory does not exist: {cache_dir}")
+        try:
+            cache_dir.mkdir(exist_ok=True, parents=True)
+            logger.info(f"Created cache directory: {cache_dir}")
+        except Exception as e:
+            logger.error(f"Failed to create cache directory: {e}")
+            success = False
+    else:
+        logger.info(f"Cache directory found: {cache_dir}")
+    
+    # Check output directory permissions
+    output_dir = Path(args.output_dir)
+    if output_dir.exists():
+        if not os.access(output_dir, os.W_OK):
+            logger.error(f"No write permission for output directory: {output_dir}")
+            success = False
+    else:
+        try:
+            output_dir.mkdir(exist_ok=True, parents=True)
+            logger.info(f"Created output directory: {output_dir}")
+        except Exception as e:
+            logger.error(f"Failed to create output directory: {e}")
+            success = False
+    
+    return success
+
 def process_locus(
     locus: str,
     encoder: ProtBERTEncoder,
@@ -145,7 +212,8 @@ def process_locus(
     umap_min_dist: float = 0.1,
     tsne_perplexity: float = 30.0,
     tsne_learning_rate: float = 200.0,
-    pca_components: int = 2
+    pca_components: int = 2,
+    debug: bool = False
 ) -> Dict:
     """Process a specific HLA locus"""
     start_time = time.time()
@@ -181,75 +249,137 @@ def process_locus(
     
     logger.info(f"Found {len(valid_alleles)} valid sequences for locus {locus}")
     
+    if len(valid_alleles) == 0:
+        logger.error(f"No valid sequences found for locus {locus}")
+        return {
+            "locus": locus,
+            "status": "error",
+            "reason": "No valid sequences found",
+            "allele_count": 0
+        }
+    
     # Get embeddings in batches
     logger.info(f"Encoding {len(valid_alleles)} {locus} alleles")
     embeddings = {}
     
-    # Process in batches
-    for i in tqdm(range(0, len(valid_alleles), batch_size), desc=f"Encoding {locus} alleles"):
-        batch_alleles = valid_alleles[i:i + batch_size]
-        batch_embeddings = encoder.batch_encode_alleles(batch_alleles)
-        embeddings.update(batch_embeddings)
+    try:
+        # First check which alleles are already cached in the encoder
+        cached_alleles = []
+        uncached_alleles = []
+        
+        for allele in valid_alleles:
+            if allele in encoder.embeddings:
+                cached_alleles.append(allele)
+                embeddings[allele] = encoder.embeddings[allele]
+            else:
+                uncached_alleles.append(allele)
+        
+        logger.info(f"Found {len(cached_alleles)} cached embeddings, {len(uncached_alleles)} to encode")
+        
+        # Process uncached alleles in batches
+        for i in tqdm(range(0, len(uncached_alleles), batch_size), desc=f"Encoding {locus} alleles"):
+            batch_alleles = uncached_alleles[i:i + batch_size]
+            batch_embeddings = encoder.batch_encode_alleles(batch_alleles)
+            embeddings.update(batch_embeddings)
+    
+        # Double-check dimensions
+        embedding_dims = [emb.shape[0] for emb in embeddings.values()]
+        if len(set(embedding_dims)) > 1:
+            logger.warning(f"Inconsistent embedding dimensions found: {set(embedding_dims)}")
+            
+            # Use the most common dimension
+            from collections import Counter
+            most_common_dim = Counter(embedding_dims).most_common(1)[0][0]
+            logger.info(f"Using most common dimension: {most_common_dim}")
+            
+            # Filter embeddings to keep only those with the most common dimension
+            embeddings = {
+                allele: emb for allele, emb in embeddings.items() 
+                if emb.shape[0] == most_common_dim
+            }
+            logger.info(f"Filtered to {len(embeddings)} embeddings with consistent dimensions")
+    except Exception as e:
+        if debug:
+            logger.error(f"Error encoding alleles: {e}\n{traceback.format_exc()}")
+        else:
+            logger.error(f"Error encoding alleles: {e}")
+        return {
+            "locus": locus,
+            "status": "error",
+            "reason": f"Encoding error: {str(e)}",
+            "allele_count": len(valid_alleles)
+        }
     
     # Save embeddings
     embeddings_file = embeddings_dir / f"hla_{locus}_embeddings.pkl"
-    pd.to_pickle(embeddings, embeddings_file)
-    logger.info(f"Saved {len(embeddings)} {locus} embeddings to {embeddings_file}")
+    try:
+        pd.to_pickle(embeddings, embeddings_file)
+        logger.info(f"Saved {len(embeddings)} {locus} embeddings to {embeddings_file}")
+    except Exception as e:
+        logger.error(f"Error saving embeddings to {embeddings_file}: {e}")
+        if debug:
+            logger.error(traceback.format_exc())
     
     # Create visualizations
+    plot_paths = {}
+    vis_methods = [
+        ("umap", {
+            "n_neighbors": umap_neighbors,
+            "min_dist": umap_min_dist,
+            "random_state": 42
+        }),
+        ("tsne", {
+            "perplexity": tsne_perplexity,
+            "learning_rate": tsne_learning_rate,
+            "random_state": 42
+        }),
+        ("pca", {
+            "n_components": pca_components
+        })
+    ]
     
-    # 1. UMAP visualization
-    logger.info(f"Generating UMAP visualization for {locus}")
-    umap_file = plots_dir / f"hla_{locus}_umap.png"
-    visualizer.visualize_embeddings(
-        embeddings,
-        method="umap",
-        color_by="group",
-        output_file=str(umap_file),
-        title=f"HLA-{locus} Embeddings - UMAP Projection",
-        n_neighbors=umap_neighbors,
-        min_dist=umap_min_dist,
-        random_state=42
-    )
+    for method, params in vis_methods:
+        try:
+            logger.info(f"Generating {method.upper()} visualization for {locus}")
+            output_file = plots_dir / f"hla_{locus}_{method}.png"
+            
+            visualizer.visualize_embeddings(
+                embeddings,
+                method=method,
+                color_by="group",
+                output_file=str(output_file),
+                title=f"HLA-{locus} Embeddings - {method.upper()} Projection",
+                **params
+            )
+            
+            plot_paths[method] = str(output_file)
+        except Exception as e:
+            logger.error(f"Error generating {method} visualization: {e}")
+            if debug:
+                logger.error(traceback.format_exc())
+            plot_paths[method] = "error"
     
-    # 2. t-SNE visualization
-    logger.info(f"Generating t-SNE visualization for {locus}")
-    tsne_file = plots_dir / f"hla_{locus}_tsne.png"
-    visualizer.visualize_embeddings(
-        embeddings,
-        method="tsne",
-        color_by="group",
-        output_file=str(tsne_file),
-        title=f"HLA-{locus} Embeddings - t-SNE Projection",
-        perplexity=tsne_perplexity,
-        learning_rate=tsne_learning_rate,
-        random_state=42
-    )
-    
-    # 3. PCA visualization
-    logger.info(f"Generating PCA visualization for {locus}")
-    pca_file = plots_dir / f"hla_{locus}_pca.png"
-    visualizer.visualize_embeddings(
-        embeddings,
-        method="pca",
-        color_by="group",
-        output_file=str(pca_file),
-        title=f"HLA-{locus} Embeddings - PCA Projection",
-        n_components=pca_components
-    )
-    
-    # 4. Allele groups visualization
-    logger.info(f"Generating allele groups visualization for {locus}")
-    groups_file = plots_dir / f"hla_{locus}_groups.png"
-    visualizer.visualize_allele_groups(
-        locus,
-        method="umap",
-        min_alleles_per_group=5,
-        output_file=str(groups_file),
-        n_neighbors=umap_neighbors,
-        min_dist=umap_min_dist,
-        random_state=42
-    )
+    # Generate allele groups visualization
+    try:
+        logger.info(f"Generating allele groups visualization for {locus}")
+        groups_file = plots_dir / f"hla_{locus}_groups.png"
+        
+        visualizer.visualize_allele_groups(
+            locus,
+            method="umap",
+            min_alleles_per_group=5,
+            output_file=str(groups_file),
+            n_neighbors=umap_neighbors,
+            min_dist=umap_min_dist,
+            random_state=42
+        )
+        
+        plot_paths["groups"] = str(groups_file)
+    except Exception as e:
+        logger.error(f"Error generating groups visualization: {e}")
+        if debug:
+            logger.error(traceback.format_exc())
+        plot_paths["groups"] = "error"
     
     # Calculate processing time
     end_time = time.time()
@@ -262,12 +392,7 @@ def process_locus(
         "allele_count": len(valid_alleles),
         "embedding_count": len(embeddings),
         "processing_time": processing_time,
-        "plots": {
-            "umap": str(umap_file),
-            "tsne": str(tsne_file),
-            "pca": str(pca_file),
-            "groups": str(groups_file),
-        }
+        "plots": plot_paths
     }
 
 def write_report(results: List[Dict], reports_dir: Path) -> str:
@@ -291,6 +416,15 @@ def write_report(results: List[Dict], reports_dir: Path) -> str:
         f.write(f"- Total embeddings generated: {total_embeddings}\n")
         f.write(f"- Total processing time: {total_time:.2f} seconds\n\n")
         
+        # Success, skipped, and error counts
+        success_count = sum(1 for r in results if r["status"] == "success")
+        skipped_count = sum(1 for r in results if r["status"] == "skipped")
+        error_count = sum(1 for r in results if r["status"] == "error")
+        
+        f.write(f"- Successfully processed: {success_count} loci\n")
+        f.write(f"- Skipped: {skipped_count} loci\n")
+        f.write(f"- Errors: {error_count} loci\n\n")
+        
         f.write("## Loci Analysis\n\n")
         
         for result in results:
@@ -307,7 +441,10 @@ def write_report(results: List[Dict], reports_dir: Path) -> str:
                 
                 f.write("#### Visualizations\n\n")
                 for plot_type, plot_path in result["plots"].items():
-                    f.write(f"- {plot_type.upper()}: [{plot_type}]({os.path.relpath(plot_path, reports_dir.parent)})\n")
+                    if plot_path == "error":
+                        f.write(f"- {plot_type.upper()}: Failed to generate\n")
+                    else:
+                        f.write(f"- {plot_type.upper()}: [{plot_type}]({os.path.relpath(plot_path, reports_dir.parent)})\n")
                 f.write("\n")
             else:
                 f.write(f"- Reason: {result['reason']}\n\n")
@@ -320,23 +457,41 @@ def main():
     args = parse_args()
     
     # Setup logging
-    log_level = logging.DEBUG if args.verbose else logging.INFO
+    log_level = logging.DEBUG if args.verbose or args.debug else logging.INFO
     logger = setup_logging(level=log_level)
     logger.info("Starting HLA locus-specific embedding analysis")
+    
+    # Check environment
+    if not check_environment(args):
+        logger.error("Environment check failed. Fix the issues above and try again.")
+        return 1
     
     # Create output directories
     embeddings_dir, plots_dir, reports_dir = make_output_dirs(args.output_dir)
     logger.info(f"Output directories created at {args.output_dir}")
     
     # Initialize encoder
-    logger.info(f"Initializing ProtBERTEncoder")
-    encoder = ProtBERTEncoder(
-        sequence_file=args.sequence_file,
-        cache_dir=args.cache_dir
-    )
+    try:
+        logger.info(f"Initializing ProtBERTEncoder")
+        encoder = ProtBERTEncoder(
+            sequence_file=args.sequence_file,
+            cache_dir=args.cache_dir
+        )
+        logger.info(f"Encoder initialized with {len(encoder.sequences)} sequences and {len(encoder.embeddings)} cached embeddings")
+    except Exception as e:
+        logger.error(f"Error initializing encoder: {e}")
+        if args.debug:
+            logger.error(traceback.format_exc())
+        return 1
     
     # Initialize visualizer
-    visualizer = HLAEmbeddingVisualizer(encoder)
+    try:
+        visualizer = HLAEmbeddingVisualizer(encoder)
+    except Exception as e:
+        logger.error(f"Error initializing visualizer: {e}")
+        if args.debug:
+            logger.error(traceback.format_exc())
+        return 1
     
     # Process each locus
     results = []
@@ -355,11 +510,14 @@ def main():
                 umap_min_dist=args.umap_min_dist,
                 tsne_perplexity=args.tsne_perplexity,
                 tsne_learning_rate=args.tsne_learning_rate,
-                pca_components=args.pca_components
+                pca_components=args.pca_components,
+                debug=args.debug
             )
             results.append(result)
         except Exception as e:
             logger.error(f"Error processing locus {locus}: {e}")
+            if args.debug:
+                logger.error(traceback.format_exc())
             results.append({
                 "locus": locus,
                 "status": "error",
@@ -368,8 +526,13 @@ def main():
             })
     
     # Generate report
-    report_file = write_report(results, reports_dir)
-    logger.info(f"Analysis report written to {report_file}")
+    try:
+        report_file = write_report(results, reports_dir)
+        logger.info(f"Analysis report written to {report_file}")
+    except Exception as e:
+        logger.error(f"Error writing report: {e}")
+        if args.debug:
+            logger.error(traceback.format_exc())
     
     # Print summary
     success_count = sum(1 for r in results if r["status"] == "success")
@@ -379,8 +542,8 @@ def main():
     logger.info(f"Analysis complete: {success_count} loci processed successfully, "
                 f"{skipped_count} skipped, {error_count} errors")
     
-    # Return success
-    return 0
+    # Return success if at least one locus was processed successfully
+    return 0 if success_count > 0 else 1
 
 if __name__ == "__main__":
     sys.exit(main())

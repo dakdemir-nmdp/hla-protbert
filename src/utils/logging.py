@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, Union
 
 def setup_logging(
-    level: str = "INFO", 
+    level: Union[str, int] = "INFO", 
     log_file: Optional[str] = None,
     log_format: Optional[str] = None,
     config: Optional[Dict[str, Any]] = None
@@ -18,7 +18,8 @@ def setup_logging(
     """Set up logging for the application
     
     Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        level: Logging level (either string like "DEBUG", "INFO", etc. or 
+               logging.* constant like logging.DEBUG, logging.INFO)
         log_file: Path to log file (or None for console only)
         log_format: Log message format
         config: Configuration dictionary (overrides other parameters)
@@ -36,8 +37,12 @@ def setup_logging(
     if not log_format:
         log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     
-    # Convert level string to logging level constant
-    numeric_level = getattr(logging, level.upper(), logging.INFO)
+    # Convert level string to logging level constant if it's a string
+    if isinstance(level, str):
+        numeric_level = getattr(logging, level.upper(), logging.INFO)
+    else:
+        # If level is already a numeric value (int), use it directly
+        numeric_level = level
     
     # Configure root logger
     root_logger = logging.getLogger()
