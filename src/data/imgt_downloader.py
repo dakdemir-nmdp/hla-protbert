@@ -18,7 +18,7 @@ class IMGTDownloader:
     
     IMGT_FTP_SERVER = "ftp.ebi.ac.uk"
     IMGT_FTP_DIR = "/pub/databases/ipd/imgt/hla/fasta/"
-    IMGT_VERSION_URL = "https://www.ebi.ac.uk/ipd/imgt/hla/release.html"
+    IMGT_VERSION_URL = "https://www.ebi.ac.uk/ipd/imgt/hla/docs/release.html"
     
     def __init__(self, data_dir='./data/raw'):
         """Initialize downloader with target directory
@@ -38,24 +38,14 @@ class IMGTDownloader:
         Returns:
             bool: True if updated, False if already current
         """
-        # Check current version
-        current_version = self._get_current_version()
-        
-        # Get latest version from IMGT/HLA website
-        latest_version = self._get_latest_version()
-        
-        if force or current_version != latest_version:
-            logger.info(f"Updating IMGT/HLA from {current_version} to {latest_version}")
-            # Download FTP data
-            self._download_ftp_data()
-            # Extract files
-            self._extract_data()
-            # Update version info
-            self._update_version_info(latest_version)
-            return True
-        else:
-            logger.info(f"IMGT/HLA database already at latest version {current_version}")
-            return False
+        # Download FTP data
+        self._download_ftp_data()
+        # Extract files
+        self._extract_data()
+        # Update version info with current date
+        today = datetime.now().strftime("%Y%m%d")
+        self._update_version_info(f"download-{today}")
+        return True
             
     def _get_current_version(self):
         """Get currently installed version

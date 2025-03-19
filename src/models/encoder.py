@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 # Try to import pyard for HLA nomenclature
 try:
-    import pyard
+    from py_ard import ARD
     PYARD_AVAILABLE = True
 except ImportError:
-    logger.warning("pyard not installed; allele resolution mapping will be limited")
+    logger.warning("py-ard not installed; allele resolution mapping will be limited")
     PYARD_AVAILABLE = False
 
 class HLAEncoder:
@@ -35,7 +35,8 @@ class HLAEncoder:
         self, 
         sequence_file: Union[str, Path],
         cache_dir: Union[str, Path] = "./data/embeddings",
-        locus: Optional[str] = None
+        locus: Optional[str] = None,
+        verify_ssl: bool = False
     ):
         """Initialize encoder
         
@@ -44,11 +45,13 @@ class HLAEncoder:
             cache_dir: Directory to cache embeddings
             locus: HLA locus to encode (e.g., 'A', 'B', 'DRB1')
                    If provided, only alleles of this locus will be encoded
+            verify_ssl: Whether to verify SSL certificates when downloading models
         """
         self.sequence_file = Path(sequence_file)
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(exist_ok=True, parents=True)
         self.locus = locus
+        self.verify_ssl = verify_ssl
         
         # Set cache file based on locus
         if locus:

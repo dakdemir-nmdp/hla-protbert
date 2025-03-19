@@ -81,7 +81,8 @@ class ProtBERTEncoder(HLAEncoder):
         locus: Optional[str] = None,
         device: Optional[str] = None,
         pooling_strategy: str = "mean",
-        use_peptide_binding_region: bool = True
+        use_peptide_binding_region: bool = True,
+        verify_ssl: bool = True
     ):
         """Initialize ProtBERT encoder
         
@@ -98,7 +99,7 @@ class ProtBERTEncoder(HLAEncoder):
             raise ImportError("Transformers library not installed; cannot use ProtBERTEncoder")
             
         # Initialize base class
-        super().__init__(sequence_file, cache_dir, locus)
+        super().__init__(sequence_file, cache_dir, locus, verify_ssl)
         
         self.model_name = model_name
         self.pooling_strategy = pooling_strategy
@@ -117,8 +118,20 @@ class ProtBERTEncoder(HLAEncoder):
         logger.info(f"Loading ProtBERT model: {self.model_name}")
         
         try:
-            self.tokenizer = BertTokenizer.from_pretrained(self.model_name, do_lower_case=False)
-            self.model = BertModel.from_pretrained(self.model_name)
+            cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
+            self.tokenizer = BertTokenizer.from_pretrained(
+                self.model_name, 
+                do_lower_case=False,
+                trust_remote_code=True,
+                local_files_only=True,
+                cache_dir=cache_dir
+            )
+            self.model = BertModel.from_pretrained(
+                self.model_name,
+                trust_remote_code=True,
+                local_files_only=True,
+                cache_dir=cache_dir
+            )
             self.model.to(self.device)
             self.model.eval()  # Set to evaluation mode
             logger.info(f"Successfully loaded model on {self.device}")

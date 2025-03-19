@@ -46,6 +46,19 @@ conda create -n hlaprotbert python=3.9
 conda activate hlaprotbert
 ```
 
+
+# use venv
+```bash
+# Clone the repository
+git clone
+cd hla-protbert
+
+# Create a virtual environment
+python -m venv venv
+# activate the virtual environment
+source venv/bin/activate
+```
+
 ### Installing Dependencies
 
 You can install the dependencies using pip with the provided requirements.txt file:

@@ -12,6 +12,6 @@ requests>=2.25.0
 
 # Optional dependencies
 # Uncomment if needed:
-# umap-learn>=0.5.1     # For dimensionality reduction and visualization
-# reportlab>=3.5.0      # For PDF report generation
-# pyard>=0.2.0          # For HLA nomenclature resolution
+umap-learn>=0.5.1     # For dimensionality reduction and visualization
+reportlab>=3.5.0      # For PDF report generation
+py-ard>=0.2.0          # For HLA nomenclature resolution

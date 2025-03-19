@@ -26,89 +26,66 @@ import seaborn as sns
 from sklearn.manifold import TSNE
 import umap
 
-# Import the encoder function from the project module.
-# This function should take a FASTA file path as input and return a numpy array embedding.
-from src.models.encoder import encode_fasta
-
-# Optional: Uncomment the following line if a download_data function exists
-# from src.data.imgt_downloader import download_data
-
-def extract_allele_code(allele_name):
-    """
-    Extract the serological allele code from a full allele name.
-    For example: "DRB1*01:02" becomes "DRB1*01".
-    """
-    return allele_name.split(':')[0]
+def parse_fasta(fasta_file):
+    """Parse a FASTA file and return sequences and headers"""
+    sequences = []
+    headers = []
+    current_seq = []
+    current_header = None
+    
+    with open(fasta_file, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('>'):
+                if current_seq:  # Save the previous sequence
+                    sequences.append(''.join(current_seq))
+                    current_seq = []
+                current_header = line[1:]  # Remove '>' from header
+                headers.append(current_header)
+            else:
+                current_seq.append(line)
+        if current_seq:  # Save the last sequence
+            sequences.append(''.join(current_seq))
+    
+    return headers, sequences
 
 def main():
-    parser = argparse.ArgumentParser(description="Download data, encode FASTA files, compute projections, and generate plots.")
+    parser = argparse.ArgumentParser(description="Process HLA sequences.")
     parser.add_argument('--data-dir', default='data/raw', help='Directory containing FASTA files')
     parser.add_argument('--output-dir', default='data/processed', help='Directory to save outputs')
     args = parser.parse_args()
-    
-    # Ensure output directory exists.
-    os.makedirs(args.output_dir, exist_ok=True)
-    
-    # Optional: Download data if necessary.
-    # download_data()
 
-    # Find all FASTA files in the data directory.
-    fasta_files = glob.glob(os.path.join(args.data_dir, '*.fasta'))
-    if not fasta_files:
-        print(f"No FASTA files found in {args.data_dir}")
+    # Ensure output directory exists
+    os.makedirs(args.output_dir, exist_ok=True)
+
+    # Process the consolidated file
+    consolidated_file = os.path.join(args.data_dir, "hla_prot.fasta")
+    if not os.path.exists(consolidated_file):
+        print(f"Consolidated file not found: {consolidated_file}")
         return
+
+    print(f"Processing {consolidated_file}...")
+    headers, sequences = parse_fasta(consolidated_file)
     
-    embeddings = []
-    allele_labels = []
+    # Print report
+    print(f"\nTotal sequences: {len(sequences)}")
     
-    for fasta_file in fasta_files:
-        # Extract allele code from filename.
-        # Assumes the FASTA filename is in a format like "DRB1*01:02.fasta"
-        base_name = os.path.basename(fasta_file)
-        allele_full = os.path.splitext(base_name)[0]
-        allele_code = extract_allele_code(allele_full)
-        
-        # Generate embedding using the encoder.
-        embedding = encode_fasta(fasta_file)
-        embeddings.append(embedding)
-        allele_labels.append(allele_code)
-        print(f"Processed {fasta_file} with allele code {allele_code}")
+    # Analyze sequence lengths
+    lengths = [len(seq) for seq in sequences]
+    print("\nSequence length statistics:")
+    print(f"  Minimum: {min(lengths)}")
+    print(f"  Maximum: {max(lengths)}")
+    print(f"  Average: {sum(lengths)/len(lengths):.1f}")
     
-    embeddings = np.array(embeddings)
+    # Count alleles per locus
+    locus_counts = {}
+    for header in headers:
+        locus = header.split('*')[0]
+        locus_counts[locus] = locus_counts.get(locus, 0) + 1
     
-    # Compute t-SNE projection.
-    tsne = TSNE(n_components=2, random_state=42)
-    tsne_proj = tsne.fit_transform(embeddings)
-    
-    # Compute UMAP projection.
-    reducer = umap.UMAP(random_state=42)
-    umap_proj = reducer.fit_transform(embeddings)
-    
-    # Plot t-SNE projection.
-    plt.figure(figsize=(10, 8))
-    sns.scatterplot(x=tsne_proj[:, 0], y=tsne_proj[:, 1], hue=allele_labels, palette='deep')
-    plt.title("t-SNE Projection")
-    plt.legend(title="Allele Code")
-    tsne_fig_path = os.path.join(args.output_dir, 'tsne_projection.png')
-    plt.savefig(tsne_fig_path)
-    plt.close()
-    print(f"Saved t-SNE plot to {tsne_fig_path}")
-    
-    # Plot UMAP projection.
-    plt.figure(figsize=(10, 8))
-    sns.scatterplot(x=umap_proj[:, 0], y=umap_proj[:, 1], hue=allele_labels, palette='deep')
-    plt.title("UMAP Projection")
-    plt.legend(title="Allele Code")
-    umap_fig_path = os.path.join(args.output_dir, 'umap_projection.png')
-    plt.savefig(umap_fig_path)
-    plt.close()
-    print(f"Saved UMAP plot to {umap_fig_path}")
-    
-    # Save embeddings and projections for further analysis.
-    np.save(os.path.join(args.output_dir, 'embeddings.npy'), embeddings)
-    np.save(os.path.join(args.output_dir, 'tsne_projection.npy'), tsne_proj)
-    np.save(os.path.join(args.output_dir, 'umap_projection.npy'), umap_proj)
-    print("Saved embeddings and projection arrays.")
+    print("\nAlleles per locus:")
+    for locus, count in sorted(locus_counts.items()):
+        print(f"  {locus}: {count}")
 
 if __name__ == '__main__':
     main()
