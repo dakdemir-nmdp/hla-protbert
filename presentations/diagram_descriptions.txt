@@ -1,0 +1,25 @@
+DIAGRAM DESCRIPTIONS FOR HLA-PROTBERT PRESENTATION
+
+1. transformer_architecture.pdf
+   Description: A diagram showing the transformer architecture with:
+   - Input embedding layer for amino acid sequences
+   - Multi-head self-attention mechanism
+   - Feed-forward neural networks
+   - Layer normalization components
+   - Output layer
+   
+   The diagram should illustrate how protein sequences are processed through
+   the transformer layers with positional encodings and attention weights.
+
+2. dimensionality_reduction.pdf
+   Description: A comparison of the three dimensionality reduction techniques used:
+   - PCA: Linear projection preserving global variance
+   - t-SNE: Non-linear technique preserving local relationships
+   - UMAP: Modern technique balancing local and global structure
+   
+   The diagram should compare how these techniques map high-dimensional data
+   to 2D space, highlighting their different characteristics.
+
+NOTE: For the actual presentation, we are using the existing HLA visualization images
+from the data/analysis/locus_embeddings/class1/plots/ directory. The LaTeX file has
+been adjusted to reference these real images directly.

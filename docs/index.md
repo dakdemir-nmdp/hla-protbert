@@ -1,6 +1,6 @@
 # HLA-ProtBERT Documentation
 
-Welcome to the HLA-ProtBERT documentation. This comprehensive framework enables encoding HLA alleles using ProtBERT and applying these embeddings to clinical prediction tasks.
+Welcome to the HLA-ProtBERT documentation. This comprehensive framework enables encoding HLA alleles using ProtBERT.
 
 ## Getting Started
 
@@ -34,8 +34,7 @@ Step-by-step guides to help you accomplish common tasks:
 - [Getting Started with HLA-ProtBERT](tutorials/getting_started.md) - Basic usage and concepts
 - More tutorials coming soon:
   - Data Processing Tutorial
-  - Clinical Prediction Tutorial
-  - Advanced Analysis Tutorial
+  -   - Advanced Analysis Tutorial
   - Fine-tuning ProtBERT for Custom Tasks
 
 ## Examples
@@ -44,7 +43,6 @@ The `examples/` directory contains practical examples demonstrating key function
 
 - [Basic Encoding](../examples/basic_encoding.py) - Basic HLA allele encoding
 - [Donor Matching](../examples/donor_matching.py) - Donor-recipient HLA matching analysis
-- [Clinical Prediction](../examples/clinical_prediction.py) - Clinical outcome prediction
 
 ## Additional Resources
 

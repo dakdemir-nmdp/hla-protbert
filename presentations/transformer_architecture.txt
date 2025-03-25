@@ -1,0 +1,36 @@
+flowchart TD
+    A[Protein Sequence\nM K T I I A L...] --> B[Embedding Layer]
+    B --> C[Positional Encoding]
+    
+    C --> D[Self-Attention Layer 1]
+    D --> E[Feed-Forward Network 1]
+    E --> F[Layer Normalization 1]
+    
+    F --> G[Self-Attention Layer 2]
+    G --> H[Feed-Forward Network 2]
+    H --> I[Layer Normalization 2]
+    
+    I --> J[...More Layers...]
+    
+    J --> K[Final Layer\nTransformer Output]
+    K --> L[Protein Embedding\nVector Representation]
+    
+    subgraph "Self-Attention Mechanism"
+        SA1[Input Split into Queries,\nKeys, and Values] --> SA2[Compute Attention Scores]
+        SA2 --> SA3[Apply Softmax to Get\nAttention Weights]
+        SA3 --> SA4[Weight Values and Combine]
+    end
+    
+    style A fill:#f9f7f7,stroke:#333
+    style L fill:#e3f2fd,stroke:#333,stroke-width:2px
+    style SA1 fill:#fff8e1,stroke:#f57f17
+    style SA2 fill:#fff8e1,stroke:#f57f17
+    style SA3 fill:#fff8e1,stroke:#f57f17
+    style SA4 fill:#fff8e1,stroke:#f57f17
+```
+
+Key Concepts:
+1. The model takes protein sequences as input (amino acids with spaces)
+2. Self-attention allows each amino acid to "focus" on relevant parts of the sequence
+3. Multiple transformer layers process the data, learning increasingly complex patterns
+4. The final output is a dense vector that captures the protein's functional and structural properties

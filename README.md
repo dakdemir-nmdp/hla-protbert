@@ -1,6 +1,6 @@
 # HLA-ProtBERT
 
-A comprehensive framework for encoding HLA alleles using ProtBERT and applying these embeddings to clinical prediction tasks.
+A comprehensive framework for encoding HLA alleles using ProtBERT.
 
 ## Features
 
@@ -8,7 +8,6 @@ A comprehensive framework for encoding HLA alleles using ProtBERT and applying t
 - **ProtBERT Encoding**: Convert HLA alleles to high-dimensional protein embeddings
 - **Locus-Specific Models**: Separate encoders for different HLA loci (A, B, C, DRB1, etc.)
 - **Transplant Matching**: Advanced donor-recipient compatibility analysis
-- **Clinical Prediction**: Extensible framework for predicting clinical outcomes
 - **Efficient Caching**: Save time by caching both sequences and embeddings
 
 ## Installation
@@ -158,29 +157,6 @@ python examples/donor_matching.py \
   --report matching_report.pdf
 ```
 
-### 5. Clinical Prediction
-
-First, train a clinical prediction model:
-
-```bash
-python scripts/train_predictor.py \
-  --training-data ./data/clinical/training_data.csv \
-  --predictor-type transplant \
-  --model-type mlp \
-  --output-model ./data/models/transplant_model.pt
-```
-
-Then use it to make predictions:
-
-```bash
-python examples/clinical_prediction.py \
-  --model ./data/models/transplant_model.pt \
-  --donor A*01:01 B*08:01 C*07:01 \
-  --recipient A*02:01 B*44:02 C*05:01 \
-  --clinical recipient_age=45 donor_age=32 disease=1 \
-  --prediction-type survival
-```
-
 ## Command-Line Tools
 
 ### Update IMGT/HLA Database
@@ -211,31 +187,12 @@ Options:
 - `--model`: ProtBERT model name or path
 - `--device`: Device to run model on (cpu or cuda)
 
-### Train Predictor
-
-```bash
-python scripts/train_predictor.py 
-  --training-data FILE 
-  [--validation-data FILE] 
-  [--predictor-type {general,transplant,gvhd,engraftment}] 
-  [--model-type {mlp,lstm,cnn}]
-  [--clinical-vars VARS]
-```
-
-Options:
-- `--training-data`: Path to training data file (CSV)
-- `--validation-data`: Path to validation data file (CSV)
-- `--predictor-type`: Type of predictor to train
-- `--model-type`: Neural network architecture
-- `--clinical-vars`: Comma-separated list of clinical variables
-
 ## Examples
 
 The `examples/` directory contains scripts demonstrating key functionality:
 
 - `basic_encoding.py`: Basic HLA allele encoding
 - `donor_matching.py`: Donor-recipient HLA matching analysis
-- `clinical_prediction.py`: Clinical outcome prediction
 
 ## Directory Structure
 
