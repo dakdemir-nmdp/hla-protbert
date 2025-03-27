@@ -233,5 +233,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - [IMGT/HLA Database](https://www.ebi.ac.uk/ipd/imgt/hla/) for providing HLA sequence data
-- [ProtBERT](https://github.com/agemagician/ProtTrans) for protein language models
+- [ProtTrans](https://github.com/agemagician/ProtTrans) for protein language models
 - [BioPython](https://biopython.org/) for sequence processing utilities
