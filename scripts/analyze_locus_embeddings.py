@@ -26,7 +26,8 @@ sys.path.insert(0, str(project_dir))
 
 # Import our modules
 try:
-    from src.models.protbert import ProtBERTEncoder
+    from src.models.encoders import ProtBERTEncoder, ESM3Encoder # Import both
+    from src.models.encoder import HLAEncoder # Import base class for type hinting
     from src.analysis.visualization import HLAEmbeddingVisualizer
     from src.utils.logging import setup_logging
 except ImportError as e:
@@ -140,6 +141,34 @@ def parse_args():
         action="store_true",
         help="Enable debug mode (extra checks and exception details)"
     )
+
+    # Add encoder selection arguments
+    parser.add_argument(
+        "--encoder-type",
+        type=str,
+        choices=["protbert", "esm3"],
+        default="protbert",
+        help="Type of encoder model to use ('protbert' or 'esm3')"
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None, # Default handled later based on encoder type
+        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'esm3_sm_open_v1')"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        help="Device to run the model on ('cpu', 'cuda', 'auto')"
+    )
+    parser.add_argument(
+        "--pooling-strategy",
+        type=str,
+        choices=["mean", "cls"],
+        default="mean",
+        help="Pooling strategy for ESM3 embeddings ('mean' or 'cls')"
+    )
     
     return parser.parse_args()
 
@@ -202,7 +231,7 @@ def check_environment(args):
 
 def process_locus(
     locus: str,
-    encoder: ProtBERTEncoder,
+    encoder: HLAEncoder, # Use base class for type hint
     visualizer: HLAEmbeddingVisualizer,
     embeddings_dir: Path,
     plots_dir: Path,
@@ -470,16 +499,41 @@ def main():
     embeddings_dir, plots_dir, reports_dir = make_output_dirs(args.output_dir)
     logger.info(f"Output directories created at {args.output_dir}")
     
-    # Initialize encoder
+    # Initialize encoder based on type
     try:
-        logger.info(f"Initializing ProtBERTEncoder")
-        encoder = ProtBERTEncoder(
-            sequence_file=args.sequence_file,
-            cache_dir=args.cache_dir
-        )
-        logger.info(f"Encoder initialized with {len(encoder.sequences)} sequences and {len(encoder.embeddings)} cached embeddings")
+        logger.info(f"Initializing {args.encoder_type.upper()} encoder")
+        encoder_args = {
+            "sequence_file": args.sequence_file,
+            "cache_dir": args.cache_dir,
+            "device": args.device,
+            # Add model_name if provided, otherwise let class use default
+            **({"model_name": args.model_name} if args.model_name else {})
+        }
+
+        if args.encoder_type == "protbert":
+            EncoderClass = ProtBERTEncoder
+            # ProtBERT specific args if any (e.g., model_name default)
+            if not args.model_name:
+                 encoder_args["model_name"] = "Rostlab/prot_bert" # Default for ProtBERT
+        elif args.encoder_type == "esm3":
+            EncoderClass = ESM3Encoder
+            # ESM3 specific args
+            encoder_args["pooling_strategy"] = args.pooling_strategy
+            if not args.model_name:
+                 encoder_args["model_name"] = "esm3_sm_open_v1" # Default for ESM3
+        else:
+            # This case should not be reached due to argparse choices
+            raise ValueError(f"Unsupported encoder type: {args.encoder_type}")
+
+        encoder = EncoderClass(**encoder_args)
+        
+        logger.info(f"{args.encoder_type.upper()} encoder initialized with {len(encoder.sequences)} sequences and {len(encoder.embeddings)} cached embeddings")
+        logger.info(f"Using model: {encoder.model_name} on device: {encoder.device}")
+        if args.encoder_type == "esm3":
+             logger.info(f"Using pooling strategy: {encoder.pooling_strategy}")
+
     except Exception as e:
-        logger.error(f"Error initializing encoder: {e}")
+        logger.error(f"Error initializing {args.encoder_type.upper()} encoder: {e}")
         if args.debug:
             logger.error(traceback.format_exc())
         return 1

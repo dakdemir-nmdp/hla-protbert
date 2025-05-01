@@ -15,7 +15,8 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.protbert import ProtBERTEncoder
+from src.models.encoders import ProtBERTEncoder, ESM3Encoder # Import both
+from src.models.encoder import HLAEncoder # Import base class for type hinting
 from src.analysis.matching import MatchingAnalyzer
 from src.utils.logging import setup_logging
 from src.utils.config import ConfigManager
@@ -32,6 +33,35 @@ def main():
     parser.add_argument("--visualize", action="store_true", help="Generate visualizations")
     parser.add_argument("--threshold", type=float, default=0.9, help="Similarity threshold for functional matching")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
+
+    # Add encoder selection arguments
+    parser.add_argument(
+        "--encoder-type",
+        type=str,
+        choices=["protbert", "esm3"],
+        default="protbert",
+        help="Type of encoder model to use ('protbert' or 'esm3')"
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None, # Default handled later based on encoder type
+        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'esm3_sm_open_v1')"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        help="Device to run the model on ('cpu', 'cuda', 'auto')"
+    )
+    parser.add_argument(
+        "--pooling-strategy",
+        type=str,
+        choices=["mean", "cls"],
+        default="mean",
+        help="Pooling strategy for embeddings ('mean' or 'cls') - primarily for ESM3"
+    )
+
     args = parser.parse_args()
     
     # Set up logging
@@ -50,13 +80,36 @@ def main():
     donor_alleles = args.donor
     recipient_alleles = args.recipient
     
-    # Initialize encoder
-    logger.info("Initializing HLA encoder...")
+    # Initialize encoder based on type
+    logger.info(f"Initializing {args.encoder_type.upper()} encoder...")
     try:
-        encoder = ProtBERTEncoder(
-            sequence_file=sequences_file,
-            cache_dir=embeddings_dir
-        )
+        encoder_args = {
+            "sequence_file": sequences_file,
+            "cache_dir": embeddings_dir,
+            "device": args.device,
+            # Add model_name if provided, otherwise let class use default
+            **({"model_name": args.model_name} if args.model_name else {})
+        }
+
+        if args.encoder_type == "protbert":
+            EncoderClass = ProtBERTEncoder
+            # ProtBERT specific args
+            encoder_args["pooling_strategy"] = args.pooling_strategy # ProtBERT also uses this
+            encoder_args["use_peptide_binding_region"] = config.get("model.use_peptide_binding_region", True)
+            if not args.model_name:
+                 encoder_args["model_name"] = config.get("model.protbert_model_name", "Rostlab/prot_bert")
+        elif args.encoder_type == "esm3":
+            EncoderClass = ESM3Encoder
+            # ESM3 specific args
+            encoder_args["pooling_strategy"] = args.pooling_strategy
+            if not args.model_name:
+                 encoder_args["model_name"] = config.get("model.esm3_model_name", "esm3_sm_open_v1")
+        else:
+            # This case should not be reached due to argparse choices
+            raise ValueError(f"Unsupported encoder type: {args.encoder_type}")
+
+        encoder: HLAEncoder = EncoderClass(**encoder_args) # Add type hint
+
     except FileNotFoundError:
         logger.error(f"Sequence file not found: {sequences_file}")
         logger.error("Please run scripts/update_imgt.py and scripts/generate_embeddings.py first.")
@@ -74,6 +127,7 @@ def main():
     
     # Print matching summary
     print("\n===== HLA Matching Analysis =====\n")
+    print(f"Using {args.encoder_type.upper()} model: {encoder.model_name}")
     print(f"Donor HLA: {', '.join(donor_alleles)}")
     print(f"Recipient HLA: {', '.join(recipient_alleles)}")
     print(f"\nCommon Loci: {', '.join(results['common_loci'])}")

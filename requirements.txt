@@ -9,6 +9,9 @@ pyyaml>=5.4.0
 tqdm>=4.50.0
 biopython>=1.78
 requests>=2.25.0
+huggingface_hub>=0.10.0 # Needed by transformers and for login
+# fair-esm # Removed, using transformers instead for ESM models
+certifi>=2020.4.5.1 # For SSL certificate verification (used by requests/urllib)
 
 # Optional dependencies
 # Uncomment if needed:

@@ -260,7 +260,7 @@ class HLAEncoder:
         """
         raise NotImplementedError("Subclasses must implement _encode_sequence")
     
-    def batch_encode_alleles(self, alleles: List[str]) -> Dict[str, np.ndarray]:
+    def batch_encode_alleles(self, alleles: List[str], batch_size: int = 8, force: bool = False) -> Dict[str, np.ndarray]: # Added batch_size and force
         """Encode multiple alleles in batch
         
         Args:
@@ -269,12 +269,18 @@ class HLAEncoder:
         Returns:
             Dict mapping allele names to embeddings
         """
+        # Default implementation iterates over get_embedding.
+        # Subclasses (like ESMEncoder) should override this for true batching.
         results = {}
         missing = []
         
-        for allele in alleles:
+        # Use tqdm for progress if many alleles
+        allele_iterator = tqdm(alleles, desc="Encoding Alleles") if len(alleles) > 100 else alleles
+
+        for allele in allele_iterator:
             try:
-                results[allele] = self.get_embedding(allele)
+                # Pass force flag to get_embedding
+                results[allele] = self.get_embedding(allele, force=force)
             except Exception as e:
                 logger.warning(f"Error encoding {allele}: {e}")
                 missing.append(allele)
