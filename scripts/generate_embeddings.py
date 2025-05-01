@@ -2,8 +2,9 @@
 """
 Generate HLA Embeddings
 ---------------------
-Script to generate and cache ProtBERT embeddings for HLA alleles.
+Script to generate and cache embeddings for HLA alleles using a specified encoder.
 """
+print("DEBUG: Script execution started.") # Add print at the very top
 import os
 import sys
 import argparse
@@ -18,7 +19,7 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.protbert import ProtBERTEncoder
+from src.models.encoders import ProtBERTEncoder, ESMEncoder # Updated import
 from src.utils.logging import setup_logging
 from src.utils.config import ConfigManager
 
@@ -90,14 +91,16 @@ def load_alleles_from_file(file_path: Path) -> List[str]:
 def main():
     """Main function to generate embeddings"""
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Generate ProtBERT embeddings for HLA alleles")
+    parser = argparse.ArgumentParser(description="Generate HLA embeddings using a specified encoder.")
+    parser.add_argument("--encoder-type", choices=["protbert", "esm"], default="protbert", # Changed 'esm3' to 'esm'
+                        help="Type of encoder model to use (default: protbert)")
     parser.add_argument("--config", help="Path to configuration file")
     parser.add_argument("--data-dir", dest="data_dir", help="Base data directory")
     parser.add_argument("--sequences", help="Path to HLA sequences pickle file")
-    parser.add_argument("--cache-dir", dest="cache_dir", help="Directory to cache embeddings")
+    parser.add_argument("--cache-dir", dest="cache_dir", help="Base directory to cache embeddings (will create encoder-specific subdirs)")
     parser.add_argument("--allele-file", dest="allele_file", help="File with alleles to encode (CSV or TXT)")
     parser.add_argument("--locus", help="Generate embeddings for specific locus only")
-    parser.add_argument("--model", help="ProtBERT model name or path")
+    parser.add_argument("--model", help="Model name or path for the selected encoder")
     parser.add_argument("--all", action="store_true", help="Generate embeddings for all known alleles")
     parser.add_argument("--device", choices=["cpu", "cuda"], help="Device to run model on")
     parser.add_argument("--batch-size", dest="batch_size", type=int, help="Batch size for encoding")
@@ -108,9 +111,11 @@ def main():
     # Set up logging
     log_level = "DEBUG" if args.verbose else "INFO"
     logger = setup_logging(level=log_level)
+    # print("DEBUG: Logger setup complete.") # Remove this one for now
     
     # Load configuration
     config = ConfigManager(args.config)
+    # print("DEBUG: ConfigManager loaded.") # Remove this one for now
     
     # Determine paths and parameters
     data_dir = args.data_dir or config.get("data.base_dir", str(project_dir / "data"))
@@ -119,25 +124,66 @@ def main():
         os.path.join(data_dir, "processed", "hla_sequences.pkl")
     )
     cache_dir = args.cache_dir or config.get(
-        "data.embeddings_dir", 
-        os.path.join(data_dir, "embeddings")
+        "data.embeddings_dir",
+        os.path.join(data_dir, "embeddings") # Base embeddings dir
     )
-    model_name = args.model or config.get("model.protbert_model", "Rostlab/prot_bert")
     device = args.device or config.get("encoder.default_device", "auto")
     batch_size = args.batch_size or config.get("model.batch_size", 8)
-    
+    # print(f"DEBUG: Paths and params determined. Device: {device}, Batch Size: {batch_size}") # Remove this one for now
+
+    # Determine model name and cache dir based on encoder type
+    if args.encoder_type == "protbert":
+        EncoderClass = ProtBERTEncoder
+        default_model = "Rostlab/prot_bert"
+        model_config_key = "model.protbert_model"
+        cache_subdir = "protbert"
+        pooling_strategy = config.get("model.pooling_strategy", "mean") # ProtBERT specific
+        use_pbr = config.get("model.use_peptide_binding_region", True) # ProtBERT specific
+    elif args.encoder_type == "esm": # Changed 'esm3' to 'esm'
+        EncoderClass = ESMEncoder # Updated class name
+        default_model = "facebook/esm2_t33_650M_UR50D" # Updated default model
+        model_config_key = "model.esm_model" # Updated config key
+        cache_subdir = "esm" # Reverted to original cache subdir
+        pooling_strategy = config.get("model.esm_pooling_strategy", "mean") # Updated config key
+        use_pbr = False # Not applicable to ESMEncoder
+    else:
+        logger.error(f"Unsupported encoder type: {args.encoder_type}")
+        return 1
+    # print(f"DEBUG: Encoder type logic complete. EncoderClass: {EncoderClass.__name__}") # Remove this one for now
+
+    model_name = args.model or config.get(model_config_key, default_model)
+    final_cache_dir = Path(cache_dir) / cache_subdir # Specific cache dir for this encoder
+    # print(f"DEBUG: Model name: {model_name}, Cache dir: {final_cache_dir}") # Remove this one for now
+
     # Initialize encoder
-    logger.info(f"Initializing ProtBERT encoder (model={model_name}, device={device})")
-    encoder = ProtBERTEncoder(
-        sequence_file=sequences_file,
-        cache_dir=cache_dir,
-        model_name=model_name,
-        locus=args.locus,
-        device=device,
-        pooling_strategy=config.get("model.pooling_strategy", "mean"),
-        use_peptide_binding_region=config.get("model.use_peptide_binding_region", True)
-    )
-    
+    logger.info(f"Initializing {args.encoder_type.upper()} encoder (model={model_name}, device={device})")
+    try:
+        encoder_args = {
+            "sequence_file": sequences_file,
+            "cache_dir": final_cache_dir,
+            "model_name": model_name,
+            "locus": args.locus,
+            "device": device,
+            "pooling_strategy": pooling_strategy
+        }
+        
+        # Add HF token if available in config (for ESM)
+        if args.encoder_type == "esm":
+            hf_token = config.get("model.hf_token", None)
+            if hf_token:
+                encoder_args["hf_token"] = hf_token
+                
+        # Add ProtBERT specific args if applicable
+        if args.encoder_type == "protbert":
+            encoder_args["use_peptide_binding_region"] = use_pbr
+            # Potentially add verify_ssl for ProtBERT if it still needs it
+
+        encoder = EncoderClass(**encoder_args)
+
+    except Exception as e:
+        logger.error(f"Failed to initialize {args.encoder_type.upper()} encoder: {e}")
+        return 1
+
     # Determine which alleles to encode
     alleles = []
     
@@ -177,7 +223,7 @@ def main():
     
     else:
         logger.error("No alleles specified. Use --all, --locus, or --allele-file.")
-        return
+        return 1
     
     # Skip alleles that are already cached unless forced
     if not args.force:
@@ -192,59 +238,39 @@ def main():
     
     if not alleles:
         logger.info("No new alleles to encode.")
-        return
+        return 0 # Return 0 if no alleles to encode
     
     # Generate embeddings
-    logger.info(f"Generating embeddings for {len(alleles)} alleles in batches of {batch_size}...")
-    
-    # Use batch encoding for better performance
-    logger.info("Performing batch encoding...")
-    allele_sequences = []
-    
-    # Collect sequences for alleles
-    for allele in alleles:
-        try:
-            sequence = encoder.get_sequence(allele)
-            if sequence:
-                allele_sequences.append((allele, sequence))
-            else:
-                logger.warning(f"No sequence found for {allele}")
-        except Exception as e:
-            logger.error(f"Error getting sequence for {allele}: {e}")
-    
-    # Perform batch encoding
-    if allele_sequences:
-        # Extract sequences
-        batch_alleles = [a for a, _ in allele_sequences]
-        batch_sequences = [s for _, s in allele_sequences]
-        
-        # Encode in batches
-        for i in range(0, len(batch_sequences), batch_size):
-            batch = batch_sequences[i:i + batch_size]
-            batch_names = batch_alleles[i:i + batch_size]
-            
-            logger.info(f"Encoding batch {i//batch_size + 1}/{(len(batch_sequences)-1)//batch_size + 1} ({len(batch)} alleles)")
-            
-            try:
-                embeddings = encoder.batch_encode(batch, batch_size=batch_size)
-                
-                # Cache embeddings
-                for j, allele in enumerate(batch_names):
-                    encoder.embeddings[allele] = embeddings[j]
-                
-                # Save cache periodically
-                if (i + batch_size) % (batch_size * 5) == 0 or i + batch_size >= len(batch_sequences):
-                    logger.info(f"Saving embeddings cache ({len(encoder.embeddings)} total embeddings)")
-                    encoder._save_embedding_cache()
-                    
-            except Exception as e:
-                logger.error(f"Error encoding batch: {e}")
-    
-    # Save final cache
-    logger.info(f"Saving final embeddings cache ({len(encoder.embeddings)} total embeddings)")
-    encoder._save_embedding_cache()
-    
-    logger.info("Embedding generation complete")
+    logger.info(f"Generating {args.encoder_type.upper()} embeddings for {len(alleles)} alleles in batches of {batch_size}...")
 
-if __name__ == "__main__":
-    main()
+    # Use batch encoding for better performance
+    logger.info(f"Performing batch encoding with {args.encoder_type.upper()}...")
+    # The batch_encode_alleles method is overridden in ESMEncoder to use its specific batch_encode
+    # For ProtBERT, it uses the base class implementation which calls its specific batch_encode.
+    # No change needed here as the encoder object handles the correct batching.
+
+    try:
+        # Call the batch encode method on the instantiated encoder
+        # This method handles sequence retrieval, encoding, caching internally
+        # Pass the force argument
+        encoder.batch_encode_alleles(alleles, batch_size=batch_size, force=args.force)
+
+    except Exception as e:
+        logger.error(f"Error during {args.encoder_type.upper()} batch encoding: {e}")
+        return 1
+
+    # Save final cache (handled within batch_encode_alleles now)
+    # logger.info(f"Saving final embeddings cache ({len(encoder.embeddings)} total embeddings)")
+    # encoder._save_embedding_cache() # Already saved within batch_encode_alleles
+
+    logger.info(f"{args.encoder_type.upper()} embedding generation complete")
+    return 0 # Return 0 on success
+
+if __name__ == '__main__':
+    try:
+        exit_code = main()
+        sys.exit(exit_code)
+    except Exception as e:
+        # Catch any uncaught exceptions from main()
+        logging.exception(f"Unhandled exception occurred: {e}")
+        sys.exit(1)

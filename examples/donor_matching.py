@@ -15,7 +15,8 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.protbert import ProtBERTEncoder
+from src.models.encoders import ProtBERTEncoder, ESMEncoder # Import both
+from src.models.encoder import HLAEncoder # Import base class for type hinting
 from src.analysis.matching import MatchingAnalyzer
 from src.utils.logging import setup_logging
 from src.utils.config import ConfigManager
@@ -32,6 +33,35 @@ def main():
     parser.add_argument("--visualize", action="store_true", help="Generate visualizations")
     parser.add_argument("--threshold", type=float, default=0.9, help="Similarity threshold for functional matching")
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
+
+    # Add encoder selection arguments
+    parser.add_argument(
+        "--encoder-type",
+        type=str,
+        choices=["protbert", "esm"],
+        default="protbert",
+        help="Type of encoder model to use ('protbert' or 'esm')"
+    )
+    parser.add_argument(
+        "--model-name",
+        type=str,
+        default=None, # Default handled later based on encoder type
+        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'facebook/esm2_t33_650M_UR50D')"
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="auto",
+        help="Device to run the model on ('cpu', 'cuda', 'auto')"
+    )
+    parser.add_argument(
+        "--pooling-strategy",
+        type=str,
+        choices=["mean", "cls"],
+        default="mean",
+        help="Pooling strategy for embeddings ('mean' or 'cls') - primarily for ESM"
+    )
+
     args = parser.parse_args()
     
     # Set up logging
@@ -43,20 +73,57 @@ def main():
     
     # Determine paths
     data_dir = args.data_dir or config.get("data.base_dir", str(project_dir / "data"))
-    embeddings_dir = config.get("data.embeddings_dir", os.path.join(data_dir, "embeddings"))
+    embeddings_base_dir = config.get("data.embeddings_dir", os.path.join(data_dir, "embeddings"))
+    
+    # Create encoder-specific cache directory
+    if args.encoder_type == "protbert":
+        cache_subdir = "protbert"
+    elif args.encoder_type == "esm":
+        cache_subdir = "esm"
+    else:
+        cache_subdir = "default"
+    
+    embeddings_dir = os.path.join(embeddings_base_dir, cache_subdir)
     sequences_file = config.get("data.sequences_file", os.path.join(data_dir, "processed", "hla_sequences.pkl"))
     
     # Standardize loci names in HLA alleles
     donor_alleles = args.donor
     recipient_alleles = args.recipient
     
-    # Initialize encoder
-    logger.info("Initializing HLA encoder...")
+    # Initialize encoder based on type
+    logger.info(f"Initializing {args.encoder_type.upper()} encoder...")
     try:
-        encoder = ProtBERTEncoder(
-            sequence_file=sequences_file,
-            cache_dir=embeddings_dir
-        )
+        encoder_args = {
+            "sequence_file": sequences_file,
+            "cache_dir": embeddings_dir,
+            "device": args.device,
+            # Add model_name if provided, otherwise let class use default
+            **({"model_name": args.model_name} if args.model_name else {})
+        }
+
+        if args.encoder_type == "protbert":
+            EncoderClass = ProtBERTEncoder
+            # ProtBERT specific args
+            encoder_args["pooling_strategy"] = args.pooling_strategy # ProtBERT also uses this
+            encoder_args["use_peptide_binding_region"] = config.get("model.use_peptide_binding_region", True)
+            if not args.model_name:
+                 encoder_args["model_name"] = config.get("model.protbert_model_name", "Rostlab/prot_bert")
+        elif args.encoder_type == "esm":
+            EncoderClass = ESMEncoder
+            # ESM specific args
+            encoder_args["pooling_strategy"] = args.pooling_strategy
+            # Add HF token from config if available
+            hf_token = config.get("model.hf_token", None)
+            if hf_token:
+                encoder_args["hf_token"] = hf_token
+            if not args.model_name:
+                 encoder_args["model_name"] = config.get("model.esm_model_name", "facebook/esm2_t33_650M_UR50D")
+        else:
+            # This case should not be reached due to argparse choices
+            raise ValueError(f"Unsupported encoder type: {args.encoder_type}")
+
+        encoder: HLAEncoder = EncoderClass(**encoder_args) # Add type hint
+
     except FileNotFoundError:
         logger.error(f"Sequence file not found: {sequences_file}")
         logger.error("Please run scripts/update_imgt.py and scripts/generate_embeddings.py first.")
@@ -74,6 +141,11 @@ def main():
     
     # Print matching summary
     print("\n===== HLA Matching Analysis =====\n")
+    print(f"Using {args.encoder_type.upper()} model: {encoder.model_name}")
+    print(f"Pooling strategy: {encoder.pooling_strategy}")
+    if args.encoder_type == "protbert":
+        print(f"Using peptide binding region: {encoder.use_peptide_binding_region}")
+    print(f"Device: {encoder.device}")
     print(f"Donor HLA: {', '.join(donor_alleles)}")
     print(f"Recipient HLA: {', '.join(recipient_alleles)}")
     print(f"\nCommon Loci: {', '.join(results['common_loci'])}")
