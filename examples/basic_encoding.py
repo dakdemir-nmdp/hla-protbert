@@ -46,7 +46,7 @@ def main():
         "--model-name",
         type=str,
         default=None, # Default handled later based on encoder type
-        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'esm3_sm_open_v1')"
+        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'facebook/esm2_t33_650M_UR50D')"
     )
     parser.add_argument(
         "--device",
@@ -80,7 +80,17 @@ def main():
     
     # Determine paths
     data_dir = args.data_dir or config.get("data.base_dir", str(project_dir / "data"))
-    embeddings_dir = config.get("data.embeddings_dir", os.path.join(data_dir, "embeddings"))
+    embeddings_base_dir = config.get("data.embeddings_dir", os.path.join(data_dir, "embeddings"))
+    
+    # Create encoder-specific cache directory
+    if args.encoder_type == "protbert":
+        cache_subdir = "protbert"
+    elif args.encoder_type == "esm":
+        cache_subdir = "esm"
+    else:
+        cache_subdir = "default"
+    
+    embeddings_dir = os.path.join(embeddings_base_dir, cache_subdir)
     sequences_file = config.get("data.sequences_file", os.path.join(data_dir, "processed", "hla_sequences.pkl"))
     
     # Initialize encoder based on type
@@ -107,8 +117,10 @@ def main():
             # ESM specific args
             encoder_args["pooling_strategy"] = args.pooling_strategy
             # verify_ssl is no longer needed by ESMEncoder
-            # Add the HF token here
-            encoder_args["hf_token"] = "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" # Use the provided token
+            # Add HF token from config if available
+            hf_token = config.get("model.hf_token", None)
+            if hf_token:
+                encoder_args["hf_token"] = hf_token
             if not args.model_name:
                  # Use the new default from ESMEncoder class
                  encoder_args["model_name"] = config.get("model.esm_model_name", "facebook/esm2_t33_650M_UR50D")

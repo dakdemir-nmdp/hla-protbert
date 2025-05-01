@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-This script encodes FASTA files using a specified encoder (ProtBERT or ESM3),
+This script encodes FASTA files using a specified encoder (ProtBERT or ESM),
 computes t-SNE and UMAP projections for the embeddings, and generates scatter plots.
 
 Dependencies:

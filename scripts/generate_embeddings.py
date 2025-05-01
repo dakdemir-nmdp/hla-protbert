@@ -164,10 +164,15 @@ def main():
             "model_name": model_name,
             "locus": args.locus,
             "device": device,
-            "pooling_strategy": pooling_strategy,
-            # verify_ssl is no longer needed by ESMEncoder
-            # hf_token could be added here if needed from config/args
+            "pooling_strategy": pooling_strategy
         }
+        
+        # Add HF token if available in config (for ESM)
+        if args.encoder_type == "esm":
+            hf_token = config.get("model.hf_token", None)
+            if hf_token:
+                encoder_args["hf_token"] = hf_token
+                
         # Add ProtBERT specific args if applicable
         if args.encoder_type == "protbert":
             encoder_args["use_peptide_binding_region"] = use_pbr
@@ -240,7 +245,7 @@ def main():
 
     # Use batch encoding for better performance
     logger.info(f"Performing batch encoding with {args.encoder_type.upper()}...")
-    # The batch_encode_alleles method is overridden in ESM3Encoder to use its specific batch_encode
+    # The batch_encode_alleles method is overridden in ESMEncoder to use its specific batch_encode
     # For ProtBERT, it uses the base class implementation which calls its specific batch_encode.
     # No change needed here as the encoder object handles the correct batching.
 

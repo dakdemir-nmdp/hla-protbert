@@ -71,7 +71,12 @@ class HLADataset(torch.utils.data.Dataset):
         return item
 
 class ProtBERTEncoder(HLAEncoder):
-    """ProtBERT-based encoder for HLA alleles"""
+    """ProtBERT-based encoder for HLA alleles.
+    
+    This encoder uses the ProtBERT protein language model from RostLab,
+    accessed through the Hugging Face Transformers library.
+    It provides state-of-the-art protein sequence embeddings.
+    """
     
     def __init__(
         self, 

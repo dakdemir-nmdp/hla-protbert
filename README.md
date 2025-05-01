@@ -1,11 +1,11 @@
 # HLA Protein Encoders
 
-A comprehensive framework for encoding HLA alleles using various protein language models like ProtBERT and ESM3.
+A comprehensive framework for encoding HLA alleles using various protein language models like ProtBERT and ESM.
 
 ## Features
 
 - **Automated IMGT/HLA Database Management**: Easy downloading and updating of the latest HLA sequence data
-- **Multiple Encoders**: Supports ProtBERT and ESM3 for converting HLA alleles to high-dimensional protein embeddings. Easily extensible for other models.
+- **Multiple Encoders**: Supports ProtBERT and ESM for converting HLA alleles to high-dimensional protein embeddings. Easily extensible for other models.
 - **Locus-Specific Encoding**: Option to encode alleles for specific HLA loci (A, B, C, DRB1, etc.)
 - **Transplant Matching**: Advanced donor-recipient compatibility analysis (using ProtBERT embeddings currently)
 - **Efficient Caching**: Save time by caching both sequences and embeddings, organized by encoder type.
@@ -97,7 +97,7 @@ The main dependencies are:
 - PyYAML
 - tqdm
 - Requests
-- esm-fold (for ESM3)
+- transformers (for ESM models)
 
 Optional dependencies for advanced features:
 - UMAP (for dimensionality reduction)
@@ -124,8 +124,8 @@ Next, generate embeddings for HLA alleles using a specific encoder:
 # Generate ProtBERT embeddings for all HLA-A alleles
 python scripts/generate_embeddings.py --encoder-type protbert --locus A --all
 
-# Generate ESM3 embeddings for specific alleles
-python scripts/generate_embeddings.py --encoder-type esm3 --allele-file path/to/alleles.txt
+# Generate ESM embeddings for specific alleles
+python scripts/generate_embeddings.py --encoder-type esm --allele-file path/to/alleles.txt
 
 # Generate ProtBERT embeddings for specific alleles listed directly
 python scripts/generate_embeddings.py --encoder-type protbert --alleles A*01:01 A*02:01 B*07:02
@@ -134,7 +134,7 @@ python scripts/generate_embeddings.py --encoder-type protbert --alleles A*01:01 
 ### 3. Basic Usage
 
 ```python
-from src.models.encoders import ProtBERTEncoder, ESM3Encoder
+from src.models.encoders import ProtBERTEncoder, ESMEncoder
 
 # --- Using ProtBERT ---
 # Initialize encoder (cache will be in ./data/embeddings/protbert/)
@@ -154,21 +154,21 @@ for allele, score in similar_pb:
     print(f"  {allele}: similarity={score:.4f}")
 
 
-# --- Using ESM3 ---
-# Initialize encoder (cache will be in ./data/embeddings/esm3/)
-esm3_encoder = ESM3Encoder(
+# --- Using ESM ---
+# Initialize encoder (cache will be in ./data/embeddings/esm/)
+esm_encoder = ESMEncoder(
     sequence_file="./data/processed/hla_sequences.pkl",
     cache_dir="./data/embeddings" # Base dir, class handles subdir
 )
 
 # Get embedding for an allele
-embedding_esm3 = esm3_encoder.get_embedding("A*01:01")
-print(f"\nESM3 Embedding shape: {embedding_esm3.shape}")
+embedding_esm = esm_encoder.get_embedding("A*01:01")
+print(f"\nESM Embedding shape: {embedding_esm.shape}")
 
-# Find similar alleles using ESM3 embeddings
-similar_esm3 = esm3_encoder.find_similar_alleles("A*02:01", top_k=5)
-print("\nSimilar (ESM3):")
-for allele, score in similar_esm3:
+# Find similar alleles using ESM embeddings
+similar_esm = esm_encoder.find_similar_alleles("A*02:01", top_k=5)
+print("\nSimilar (ESM):")
+for allele, score in similar_esm:
     print(f"  {allele}: similarity={score:.4f}")
 
 ```
@@ -208,7 +208,7 @@ Options:
 
 ```bash
 python scripts/generate_embeddings.py
-  --encoder-type {protbert,esm3}
+  --encoder-type {protbert,esm}
   [--locus LOCUS]
   [--allele-file FILE]
   [--all]
@@ -221,14 +221,14 @@ python scripts/generate_embeddings.py
 ```
 
 Options:
-- `--encoder-type`: (Required) Choose the encoder model (`protbert` or `esm3`).
+- `--encoder-type`: (Required) Choose the encoder model (`protbert` or `esm`).
 - `--locus`: Generate embeddings for a specific locus only.
 - `--allele-file`: Path to a file (CSV, TXT, TSV) containing alleles to encode.
 - `--all`: Generate embeddings for all known alleles (from the sequence file).
-- `--model`: Model name or path for the selected encoder (e.g., `Rostlab/prot_bert` or `esm3_sm_open_v1`). Defaults are provided.
+- `--model`: Model name or path for the selected encoder (e.g., `Rostlab/prot_bert` or `facebook/esm2_t33_650M_UR50D`). Defaults are provided.
 - `--device`: Device to run model on (`cpu` or `cuda`). Auto-detects if not specified.
 - `--batch-size`: Batch size for encoding (default: 8).
-- `--cache-dir`: Base directory for caching embeddings (default: `data/embeddings`). Encoder-specific subdirectories (`protbert`, `esm3`) will be created.
+- `--cache-dir`: Base directory for caching embeddings (default: `data/embeddings`). Encoder-specific subdirectories (`protbert`, `esm`) will be created.
 - `--force`: Force regeneration of existing cached embeddings.
 - `--verbose`: Enable verbose logging.
 
@@ -236,7 +236,7 @@ Options:
 
 ```bash
 python scripts/encode_sequences.py
-  --encoder-type {protbert,esm3}
+  --encoder-type {protbert,esm}
   [--locus LOCUS]
   [--model MODEL]
   [--device {cpu,cuda}]
@@ -247,12 +247,12 @@ python scripts/encode_sequences.py
 ```
 
 Options:
-- `--encoder-type`: (Required) Choose the encoder model (`protbert` or `esm3`).
+- `--encoder-type`: (Required) Choose the encoder model (`protbert` or `esm`).
 - `--locus`: Process only a specific locus. If omitted, processes all loci.
 - `--model`: Model name or path for the selected encoder.
 - `--device`: Device to run model on.
 - `--batch-size`: Batch size for encoding (default: 8).
-- `--output-dir`: Base directory for outputs (default: `data/processed`). The `hla_sequences.pkl` file is saved here. Encoder-specific subdirectories (`protbert/plots`, `esm3/plots`) are created for visualizations.
+- `--output-dir`: Base directory for outputs (default: `data/processed`). The `hla_sequences.pkl` file is saved here. Encoder-specific subdirectories (`protbert/plots`, `esm/plots`) are created for visualizations.
 - `--skip-visualizations`: Skip generating t-SNE and UMAP plots.
 - `--verbose`: Enable verbose logging.
 
@@ -271,14 +271,14 @@ hla-protbert/
 │   ├── raw/                  # IMGT/HLA database files
 │   ├── processed/            # Preprocessed sequence data (hla_sequences.pkl)
 │   │   ├── protbert/         # ProtBERT specific outputs (e.g., plots)
-│   │   └── esm3/             # ESM3 specific outputs (e.g., plots)
+│   │   └── esm/              # ESM specific outputs (e.g., plots)
 │   └── embeddings/           # Cached embeddings
 │       ├── protbert/         # ProtBERT embeddings cache
-│       └── esm3/             # ESM3 embeddings cache
+│       └── esm/              # ESM embeddings cache
 ├── src/
 │   ├── data/                 # Data handling modules (downloader, parser)
 │   ├── models/
-│   │   ├── encoders/         # Encoder implementations (protbert.py, esm3.py)
+│   │   ├── encoders/         # Encoder implementations (protbert.py, esm.py)
 │   │   └── encoder.py        # Base HLAEncoder class
 │   ├── analysis/             # Analysis and visualization tools
 │   └── utils/                # Utility functions (config, logging)

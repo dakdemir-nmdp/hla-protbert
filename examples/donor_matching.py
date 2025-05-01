@@ -15,7 +15,7 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.encoders import ProtBERTEncoder, ESM3Encoder # Import both
+from src.models.encoders import ProtBERTEncoder, ESMEncoder # Import both
 from src.models.encoder import HLAEncoder # Import base class for type hinting
 from src.analysis.matching import MatchingAnalyzer
 from src.utils.logging import setup_logging
@@ -38,15 +38,15 @@ def main():
     parser.add_argument(
         "--encoder-type",
         type=str,
-        choices=["protbert", "esm3"],
+        choices=["protbert", "esm"],
         default="protbert",
-        help="Type of encoder model to use ('protbert' or 'esm3')"
+        help="Type of encoder model to use ('protbert' or 'esm')"
     )
     parser.add_argument(
         "--model-name",
         type=str,
         default=None, # Default handled later based on encoder type
-        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'esm3_sm_open_v1')"
+        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'facebook/esm2_t33_650M_UR50D')"
     )
     parser.add_argument(
         "--device",
@@ -59,7 +59,7 @@ def main():
         type=str,
         choices=["mean", "cls"],
         default="mean",
-        help="Pooling strategy for embeddings ('mean' or 'cls') - primarily for ESM3"
+        help="Pooling strategy for embeddings ('mean' or 'cls') - primarily for ESM"
     )
 
     args = parser.parse_args()
@@ -73,7 +73,17 @@ def main():
     
     # Determine paths
     data_dir = args.data_dir or config.get("data.base_dir", str(project_dir / "data"))
-    embeddings_dir = config.get("data.embeddings_dir", os.path.join(data_dir, "embeddings"))
+    embeddings_base_dir = config.get("data.embeddings_dir", os.path.join(data_dir, "embeddings"))
+    
+    # Create encoder-specific cache directory
+    if args.encoder_type == "protbert":
+        cache_subdir = "protbert"
+    elif args.encoder_type == "esm":
+        cache_subdir = "esm"
+    else:
+        cache_subdir = "default"
+    
+    embeddings_dir = os.path.join(embeddings_base_dir, cache_subdir)
     sequences_file = config.get("data.sequences_file", os.path.join(data_dir, "processed", "hla_sequences.pkl"))
     
     # Standardize loci names in HLA alleles
@@ -98,12 +108,16 @@ def main():
             encoder_args["use_peptide_binding_region"] = config.get("model.use_peptide_binding_region", True)
             if not args.model_name:
                  encoder_args["model_name"] = config.get("model.protbert_model_name", "Rostlab/prot_bert")
-        elif args.encoder_type == "esm3":
-            EncoderClass = ESM3Encoder
-            # ESM3 specific args
+        elif args.encoder_type == "esm":
+            EncoderClass = ESMEncoder
+            # ESM specific args
             encoder_args["pooling_strategy"] = args.pooling_strategy
+            # Add HF token from config if available
+            hf_token = config.get("model.hf_token", None)
+            if hf_token:
+                encoder_args["hf_token"] = hf_token
             if not args.model_name:
-                 encoder_args["model_name"] = config.get("model.esm3_model_name", "esm3_sm_open_v1")
+                 encoder_args["model_name"] = config.get("model.esm_model_name", "facebook/esm2_t33_650M_UR50D")
         else:
             # This case should not be reached due to argparse choices
             raise ValueError(f"Unsupported encoder type: {args.encoder_type}")
@@ -128,6 +142,10 @@ def main():
     # Print matching summary
     print("\n===== HLA Matching Analysis =====\n")
     print(f"Using {args.encoder_type.upper()} model: {encoder.model_name}")
+    print(f"Pooling strategy: {encoder.pooling_strategy}")
+    if args.encoder_type == "protbert":
+        print(f"Using peptide binding region: {encoder.use_peptide_binding_region}")
+    print(f"Device: {encoder.device}")
     print(f"Donor HLA: {', '.join(donor_alleles)}")
     print(f"Recipient HLA: {', '.join(recipient_alleles)}")
     print(f"\nCommon Loci: {', '.join(results['common_loci'])}")

@@ -26,10 +26,11 @@ sys.path.insert(0, str(project_dir))
 
 # Import our modules
 try:
-    from src.models.encoders import ProtBERTEncoder, ESM3Encoder # Import both
+    from src.models.encoders import ProtBERTEncoder, ESMEncoder # Import both
     from src.models.encoder import HLAEncoder # Import base class for type hinting
     from src.analysis.visualization import HLAEmbeddingVisualizer
     from src.utils.logging import setup_logging
+    from src.utils.config import ConfigManager
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running the script from the project root directory.")
@@ -146,15 +147,15 @@ def parse_args():
     parser.add_argument(
         "--encoder-type",
         type=str,
-        choices=["protbert", "esm3"],
+        choices=["protbert", "esm"],
         default="protbert",
-        help="Type of encoder model to use ('protbert' or 'esm3')"
+        help="Type of encoder model to use ('protbert' or 'esm')"
     )
     parser.add_argument(
         "--model-name",
         type=str,
         default=None, # Default handled later based on encoder type
-        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'esm3_sm_open_v1')"
+        help="Specific model name/path (e.g., 'Rostlab/prot_bert' or 'facebook/esm2_t33_650M_UR50D')"
     )
     parser.add_argument(
         "--device",
@@ -167,7 +168,7 @@ def parse_args():
         type=str,
         choices=["mean", "cls"],
         default="mean",
-        help="Pooling strategy for ESM3 embeddings ('mean' or 'cls')"
+        help="Pooling strategy for ESM embeddings ('mean' or 'cls')"
     )
     
     return parser.parse_args()
@@ -515,12 +516,17 @@ def main():
             # ProtBERT specific args if any (e.g., model_name default)
             if not args.model_name:
                  encoder_args["model_name"] = "Rostlab/prot_bert" # Default for ProtBERT
-        elif args.encoder_type == "esm3":
-            EncoderClass = ESM3Encoder
-            # ESM3 specific args
+        elif args.encoder_type == "esm":
+            EncoderClass = ESMEncoder
+            # ESM specific args
             encoder_args["pooling_strategy"] = args.pooling_strategy
+            # Add HF token if available in config
+            config_manager = ConfigManager()
+            hf_token = config_manager.get("model.hf_token", None)
+            if hf_token:
+                encoder_args["hf_token"] = hf_token
             if not args.model_name:
-                 encoder_args["model_name"] = "esm3_sm_open_v1" # Default for ESM3
+                 encoder_args["model_name"] = "facebook/esm2_t33_650M_UR50D" # Default for ESM
         else:
             # This case should not be reached due to argparse choices
             raise ValueError(f"Unsupported encoder type: {args.encoder_type}")
@@ -529,7 +535,7 @@ def main():
         
         logger.info(f"{args.encoder_type.upper()} encoder initialized with {len(encoder.sequences)} sequences and {len(encoder.embeddings)} cached embeddings")
         logger.info(f"Using model: {encoder.model_name} on device: {encoder.device}")
-        if args.encoder_type == "esm3":
+        if args.encoder_type == "esm":
              logger.info(f"Using pooling strategy: {encoder.pooling_strategy}")
 
     except Exception as e:

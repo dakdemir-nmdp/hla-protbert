@@ -1,7 +1,7 @@
 """
-ESM3 HLA Encoder
+ESM HLA Encoder
 -------------------
-Implementation of HLA encoder using ESM3.
+Implementation of HLA encoder using ESM.
 """
 import logging
 import os # Import os module
@@ -25,12 +25,17 @@ try:
     # Suppress excessive warnings from transformers about loading weights
     hf_logging.set_verbosity_error()
 except ImportError:
-    logger.warning("Transformers library or huggingface_hub not installed; ESM3 encoding via Transformers not available. Try 'pip install transformers huggingface_hub'.")
+    logger.warning("Transformers library or huggingface_hub not installed; ESM encoding via Transformers not available. Try 'pip install transformers huggingface_hub'.")
     TRANSFORMERS_AVAILABLE = False
 
 
 class ESMEncoder(HLAEncoder): # Renamed class
-    """ESM-based encoder for HLA alleles using the Transformers library""" # Updated docstring
+    """ESM-based encoder for HLA alleles.
+    
+    This encoder uses the ESM (Evolutionary Scale Modeling) protein language models
+    from Meta AI, accessed through the Hugging Face Transformers library.
+    It supports various ESM models including ESM-2 and others.
+    """
 
     def __init__(
         self,
