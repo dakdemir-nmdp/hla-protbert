@@ -19,6 +19,7 @@ python scripts/update_imgt.py --verbose
 echo "Generating ProtBERT embeddings for all loci..."
 python scripts/generate_embeddings.py --encoder-type protbert --all --verbose
 
+
 echo "Copying embeddings to locus-specific directories..."
 for locus in A B C; do
   cp data/embeddings/protbert/hla_embeddings.pkl data/analysis/locus_embeddings/class1/embeddings/hla_${locus}_embeddings.pkl
