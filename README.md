@@ -46,18 +46,6 @@ conda activate hlaprotbert
 ```
 
 
-# use venv
-```bash
-# Clone the repository
-git clone
-cd hla-protbert
-
-# Create a virtual environment
-python -m venv venv
-# activate the virtual environment
-source venv/bin/activate
-```
-
 ### Installing Dependencies
 
 You can install the dependencies using pip with the provided requirements.txt file:
@@ -104,6 +92,24 @@ Optional dependencies for advanced features:
 - ReportLab (for PDF report generation)
 - PyARD (for HLA nomenclature resolution)
 
+## Complete Data Pipeline
+
+For a streamlined process to generate all data, embeddings, and visualizations, we provide a complete pipeline script:
+
+```bash
+# Execute the complete pipeline script
+./run_complete_pipeline.sh
+```
+
+This script will:
+1. Create all required directories
+2. Download and process HLA sequence data
+3. Generate embeddings for all loci
+4. Run locus-specific analysis for both Class I and Class II loci
+5. Execute all notebooks to generate visualizations
+
+For detailed instructions on each step of the pipeline, see [EXAMPLES.md](EXAMPLES.md).
+
 ## Quick Start
 
 ### 1. Download IMGT/HLA Database
@@ -125,10 +131,10 @@ Next, generate embeddings for HLA alleles using a specific encoder:
 python scripts/generate_embeddings.py --encoder-type protbert --locus A --all
 
 # Generate ESM embeddings for specific alleles
-python scripts/generate_embeddings.py --encoder-type esm --allele-file path/to/alleles.txt
+python scripts/generate_embeddings.py --encoder-type esm --locus A --allele-file data/analysis/locus_embeddings/embeddings/A_alleles_esm.txt
 
 # Generate ProtBERT embeddings for specific alleles listed directly
-python scripts/generate_embeddings.py --encoder-type protbert --alleles A*01:01 A*02:01 B*07:02
+python scripts/generate_embeddings.py --encoder-type protbert --locus A --allele-file data/analysis/locus_embeddings/embeddings/specific_alleles.txt
 ```
 
 ### 3. Basic Usage
@@ -173,16 +179,6 @@ for allele, score in similar_esm:
 
 ```
 
-# Get embedding for an allele
-embedding = encoder.get_embedding("A*01:01")
-print(f"Embedding shape: {embedding.shape}")
-
-# Find similar alleles
-similar = encoder.find_similar_alleles("A*02:01", top_k=5)
-for allele, score in similar:
-    print(f"  {allele}: similarity={score:.4f}")
-```
-
 ### 4. HLA Matching Analysis
 
 ```bash
@@ -225,6 +221,9 @@ Options:
 - `--locus`: Generate embeddings for a specific locus only.
 - `--allele-file`: Path to a file (CSV, TXT, TSV) containing alleles to encode.
 - `--all`: Generate embeddings for all known alleles (from the sequence file).
+- `--config`: Path to a configuration file.
+- `--data-dir`: Base data directory.
+- `--sequences`: Path to HLA sequences pickle file.
 - `--model`: Model name or path for the selected encoder (e.g., `Rostlab/prot_bert` or `facebook/esm2_t33_650M_UR50D`). Defaults are provided.
 - `--device`: Device to run model on (`cpu` or `cuda`). Auto-detects if not specified.
 - `--batch-size`: Batch size for encoding (default: 8).
@@ -263,6 +262,8 @@ The `examples/` directory contains scripts demonstrating key functionality:
 - `basic_encoding.py`: Basic HLA allele encoding
 - `donor_matching.py`: Donor-recipient HLA matching analysis
 
+For a detailed guide on generating all data and visualizations from scratch, see the [EXAMPLES.md](EXAMPLES.md) file.
+
 ## Directory Structure
 
 ```
@@ -272,9 +273,19 @@ hla-protbert/
 │   ├── processed/            # Preprocessed sequence data (hla_sequences.pkl)
 │   │   ├── protbert/         # ProtBERT specific outputs (e.g., plots)
 │   │   └── esm/              # ESM specific outputs (e.g., plots)
-│   └── embeddings/           # Cached embeddings
-│       ├── protbert/         # ProtBERT embeddings cache
-│       └── esm/              # ESM embeddings cache
+│   ├── embeddings/           # Cached embeddings
+│   │   ├── protbert/         # ProtBERT embeddings cache
+│   │   └── esm/              # ESM embeddings cache
+│   └── analysis/             # Analysis results
+│       └── locus_embeddings/ # Locus-specific analysis
+│           ├── class1/       # Class I loci (A, B, C)
+│           │   ├── embeddings/
+│           │   ├── plots/
+│           │   └── reports/
+│           └── class2/       # Class II loci (DRB1, DQB1, DPB1)
+│               ├── embeddings/
+│               ├── plots/
+│               └── reports/
 ├── src/
 │   ├── data/                 # Data handling modules (downloader, parser)
 │   ├── models/
@@ -310,3 +321,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [IMGT/HLA Database](https://www.ebi.ac.uk/ipd/imgt/hla/) for providing HLA sequence data
 - [ProtTrans](https://github.com/agemagician/ProtTrans) for protein language models
 - [BioPython](https://biopython.org/) for sequence processing utilities
+EOF < /dev/null

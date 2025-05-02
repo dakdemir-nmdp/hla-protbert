@@ -94,3 +94,5 @@ coverage.xml
 .coverage.*
 
 **/.claude/settings.local.json
+
+CLAUDE.md

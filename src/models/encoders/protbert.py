@@ -260,12 +260,13 @@ class ProtBERTEncoder(HLAEncoder):
         return np.vstack(embeddings)
 
     # Override batch_encode_alleles to use the ProtBERT batch_encode method
-    def batch_encode_alleles(self, alleles: List[str], batch_size: int = 8) -> Dict[str, np.ndarray]:
+    def batch_encode_alleles(self, alleles: List[str], batch_size: int = 8, force: bool = False) -> Dict[str, np.ndarray]:
         """Encode multiple alleles in batch using the ProtBERT batch encoder
 
         Args:
             alleles: List of HLA allele names
             batch_size: Batch size for encoding
+            force: If True, regenerate embeddings even if already cached
 
         Returns:
             Dict mapping allele names to embeddings
@@ -278,7 +279,7 @@ class ProtBERTEncoder(HLAEncoder):
         # First pass: Collect sequences and check cache
         for allele in alleles:
             std_allele = self._standardize_allele(allele)
-            if std_allele in self.embeddings:
+            if not force and std_allele in self.embeddings:
                 # Use the original allele name as key in the final result,
                 # but use standardized allele for cache lookup
                 results[std_allele] = self.embeddings[std_allele]
