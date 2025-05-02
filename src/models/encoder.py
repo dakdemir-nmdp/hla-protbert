@@ -211,14 +211,15 @@ class HLAEncoder:
         
         return allele
     
-    def get_embedding(self, allele: str) -> np.ndarray:
+    def get_embedding(self, allele: str, force: bool = False) -> np.ndarray:
         """Get embedding for an allele
         
-        If the embedding is cached, returns it directly.
+        If the embedding is cached and force=False, returns it directly.
         Otherwise, gets the sequence and encodes it.
         
         Args:
             allele: HLA allele name
+            force: If True, regenerate embedding even if cached
             
         Returns:
             Embedding vector
@@ -229,8 +230,8 @@ class HLAEncoder:
         # Standardize allele name
         allele = self._standardize_allele(allele)
         
-        # Check if embedding is cached
-        if allele in self.embeddings:
+        # Check if embedding is cached and not forcing regeneration
+        if not force and allele in self.embeddings:
             return self.embeddings[allele]
         
         # Get sequence
@@ -260,11 +261,13 @@ class HLAEncoder:
         """
         raise NotImplementedError("Subclasses must implement _encode_sequence")
     
-    def batch_encode_alleles(self, alleles: List[str], batch_size: int = 8, force: bool = False) -> Dict[str, np.ndarray]: # Added batch_size and force
+    def batch_encode_alleles(self, alleles: List[str], batch_size: int = 8, force: bool = False) -> Dict[str, np.ndarray]:
         """Encode multiple alleles in batch
         
         Args:
             alleles: List of HLA allele names
+            batch_size: Size of batches for encoding (for subclasses that do true batching)
+            force: If True, regenerate embeddings even if already cached
             
         Returns:
             Dict mapping allele names to embeddings
@@ -273,6 +276,9 @@ class HLAEncoder:
         # Subclasses (like ESMEncoder) should override this for true batching.
         results = {}
         missing = []
+        
+        # Import tqdm here to avoid circular imports
+        from tqdm import tqdm
         
         # Use tqdm for progress if many alleles
         allele_iterator = tqdm(alleles, desc="Encoding Alleles") if len(alleles) > 100 else alleles

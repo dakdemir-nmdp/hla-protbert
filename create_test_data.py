@@ -1,0 +1,39 @@
+"""
+Create test data for HLA-ProtBERT
+---------------------------------
+This script creates a sample HLA sequences pickle file for testing.
+"""
+import os
+import pickle
+from pathlib import Path
+
+def main():
+    """Create a sample HLA sequences pickle file"""
+    # Sample HLA sequences
+    sequences = {
+        'A*01:01': 'MAVMAPRTLVLLLSGALALTQTWAGSHSMRYFYTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWDRNTRNVKAQSQTDRVDLGTLRGYYNQSEAGSHTVQRMYGCDVGSDWRFLRGYHQYAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQLRAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGQEQRYTCHVQHEGLPKPLTLRWELSSQPTIPIVGIIAGLVLFGAVIAGAVVAAVMWRRKSSDRKGGSYSQAAVSHDSAQGSDVSLTACKV',
+        'A*02:01': 'MAVMAPRTLLLLLSGALALTQTWAGSHSMRYFFTSVSRPGRGEPRFIAVGYVDDTQFVRFDSDAASQRMEPRAPWIEQEGPEYWDGETRKVKAHSQTHRVDLGTLRGYYNQSEAGSHTVQRMYGCDVGSDWRFLRGYHQYAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQLRAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGQEQRYTCHVQHEGLPKPLTLRWEPSSQPTIPIVGIIAGLVLFGAVITGAVVAAVMWRRKSSDRKGGSYSQAAVSDPDSAQGSDVSLTACKV',
+        'B*07:02': 'MLVMAPRTVLLLLSAALALTETWAGSHSMRYFYTAMSRPGRGEPRFISVGYVDDTQFVRFDSDAASPRTEPRAPWVEQEGPEYWDRNTQIYKAQAQTDRESLRNLRGYYNQSEAGSHTLQRMYGCDLGPDGRLLRGHDQSAYDGKDYIALNEDLSSWTAADTAAQITQRKWEAARVAEQLRAYLEGLCVEWLRRYLENGKETLQRTDPPKTHMTHHPISDHEATLRCWALGFYPAEITLTWQRDGEDQTQDTELVETRPAGDGTFQKWAAVVVPSGEEQRYTCHVQHEGLPKPLTLRWEPSSQSTIPIVGIVAGLAVLAVVVIGAVVATVMCRRKSSGGKGGSYSQAASSDSAQGSDVSLTACKV'
+    }
+    
+    # Create the data directory if it doesn't exist
+    data_dir = Path('data/processed')
+    data_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create a pickle file with the test sequences
+    with open(data_dir / 'hla_sequences.pkl', 'wb') as f:
+        pickle.dump(sequences, f)
+    
+    print(f"Created test HLA sequences pickle file with {len(sequences)} alleles at {data_dir / 'hla_sequences.pkl'}")
+    
+    # Also create an allele file
+    alleles_dir = Path('data/analysis/locus_embeddings/embeddings')
+    alleles_dir.mkdir(parents=True, exist_ok=True)
+    
+    with open(alleles_dir / 'A_alleles_protbert.txt', 'w') as f:
+        f.write('A*01:01\nA*02:01')
+    
+    print(f"Created test allele file at {alleles_dir / 'A_alleles_protbert.txt'}")
+
+if __name__ == '__main__':
+    main()
