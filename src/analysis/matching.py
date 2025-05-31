@@ -389,19 +389,33 @@ class MatchingAnalyzer:
                 elements.append(Paragraph("Visualizations", styles['Heading2']))
                 elements.append(Spacer(1, 6))
                 
-                # Create visualization and save to a temporary file
-                temp_viz_path = "temp_matching_viz.png"
-                self.visualize_matching(results, output_file=temp_viz_path)
-                
-                # Add image to report
-                from reportlab.platypus import Image
-                elements.append(Image(temp_viz_path, width=450, height=300))
-                
-                # Clean up temp file
+                # Create visualization and save to a temporary file with absolute path
+                temp_viz_path = os.path.abspath("temp_matching_viz.png")
                 try:
-                    os.remove(temp_viz_path)
-                except:
-                    pass
+                    fig = self.visualize_matching(results, output_file=temp_viz_path)
+                    logger.info(f"Visualization saved to temporary file: {temp_viz_path}")
+                except Exception as viz_error:
+                    logger.error(f"Error generating visualization: {viz_error}")
+                    # Continue without visualization
+                
+                # Add image to report if file exists
+                try:
+                    if os.path.exists(temp_viz_path):
+                        from reportlab.platypus import Image
+                        elements.append(Image(temp_viz_path, width=450, height=300))
+                    else:
+                        elements.append(Paragraph("Visualization could not be generated.", styles['Normal']))
+                except Exception as img_error:
+                    logger.error(f"Error adding image to report: {img_error}")
+                    elements.append(Paragraph("Error including visualization in report.", styles['Normal']))
+                
+                # Clean up temp file - do this AFTER building the PDF
+                try:
+                    if os.path.exists(temp_viz_path):
+                        os.remove(temp_viz_path)
+                        logger.debug(f"Removed temporary visualization file: {temp_viz_path}")
+                except Exception as cleanup_err:
+                    logger.warning(f"Failed to remove temporary file {temp_viz_path}: {cleanup_err}")
             
             # Build the PDF
             doc.build(elements)
@@ -504,9 +518,16 @@ class MatchingAnalyzer:
         
         # Save or show
         if output_file:
-            plt.savefig(output_file, dpi=300, bbox_inches='tight')
-            plt.close(fig)
-            return None
+            try:
+                logger.info(f"Attempting to save figure to {output_file}")
+                plt.savefig(output_file, dpi=300, bbox_inches='tight')
+                logger.info(f"Successfully saved figure to {output_file}")
+                plt.close(fig)
+                return None
+            except Exception as e:
+                logger.error(f"Error saving figure to {output_file}: {e}")
+                plt.close(fig)
+                return fig
         else:
             return fig
 
@@ -750,8 +771,15 @@ class DonorRankingAnalyzer:
         
         # Save or show
         if output_file:
-            plt.savefig(output_file, dpi=300, bbox_inches='tight')
-            plt.close(fig)
-            return None
+            try:
+                logger.info(f"Attempting to save figure to {output_file}")
+                plt.savefig(output_file, dpi=300, bbox_inches='tight')
+                logger.info(f"Successfully saved figure to {output_file}")
+                plt.close(fig)
+                return None
+            except Exception as e:
+                logger.error(f"Error saving figure to {output_file}: {e}")
+                plt.close(fig)
+                return fig
         else:
             return fig

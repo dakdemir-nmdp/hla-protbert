@@ -134,7 +134,7 @@ python scripts/generate_embeddings.py --encoder-type protbert --locus A --all
 python scripts/generate_embeddings.py --encoder-type esm --locus A --allele-file data/analysis/locus_embeddings/embeddings/A_alleles_esm.txt
 
 # Generate ProtBERT embeddings for specific alleles listed directly
-python scripts/generate_embeddings.py --encoder-type protbert --locus A --allele-file data/analysis/locus_embeddings/embeddings/specific_alleles.txt
+python scripts/generate_embeddings.py --encoder-type protbert --locus A --allele-file data/analysis/locus_embeddings/embeddings/A_alleles_protbert.txt
 ```
 
 ### 3. Basic Usage
@@ -182,10 +182,7 @@ for allele, score in similar_esm:
 ### 4. HLA Matching Analysis
 
 ```bash
-python examples/donor_matching.py \
-  --donor A*01:01 A*02:01 B*07:02 B*08:01 C*07:01 C*07:02 \
-  --recipient A*01:01 A*24:02 B*07:02 B*15:01 C*03:04 C*07:01 \
-  --report matching_report.pdf
+python examples/donor_matching.py --donor "A*01:01" "A*02:01" "B*07:02" "B*08:01" "C*07:01" "C*07:02" --recipient "A*01:01" "A*24:02" "B*07:02" "B*15:01" "C*03:04" "C*07:01" --report matching_report.pdf
 ```
 
 ## Command-Line Tools

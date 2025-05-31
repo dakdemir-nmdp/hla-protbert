@@ -1,13 +1,13 @@
 # HLA Locus Embedding Analysis Report
 
-Generated: 2025-03-19 08:21:44
+Generated: 2025-05-06 12:42:11
 
 ## Summary
 
 - Total HLA loci analyzed: 3
-- Total alleles processed: 17109
-- Total embeddings generated: 17109
-- Total processing time: 81.57 seconds
+- Total alleles processed: 17279
+- Total embeddings generated: 17279
+- Total processing time: 5029.31 seconds
 
 - Successfully processed: 3 loci
 - Skipped: 0 loci
@@ -18,42 +18,42 @@ Generated: 2025-03-19 08:21:44
 ### HLA-A
 
 - Status: success
-- Allele count: 5432
-- Embedding count: 5432
-- Processing time: 32.39 seconds
+- Allele count: 5489
+- Embedding count: 5489
+- Processing time: 1601.59 seconds
 
 #### Visualizations
 
 - UMAP: [umap](plots/hla_A_umap.png)
 - TSNE: [tsne](plots/hla_A_tsne.png)
-- PCA: [pca](plots/hla_A_pca.png)
-- GROUPS: Failed to generate
+- PCA: Failed to generate
+- GROUPS: [groups](plots/hla_A_groups.png)
 
 ### HLA-B
 
 - Status: success
-- Allele count: 6526
-- Embedding count: 6526
-- Processing time: 26.79 seconds
+- Allele count: 6584
+- Embedding count: 6584
+- Processing time: 1870.77 seconds
 
 #### Visualizations
 
 - UMAP: [umap](plots/hla_B_umap.png)
 - TSNE: [tsne](plots/hla_B_tsne.png)
-- PCA: [pca](plots/hla_B_pca.png)
-- GROUPS: Failed to generate
+- PCA: Failed to generate
+- GROUPS: [groups](plots/hla_B_groups.png)
 
 ### HLA-C
 
 - Status: success
-- Allele count: 5151
-- Embedding count: 5151
-- Processing time: 22.39 seconds
+- Allele count: 5206
+- Embedding count: 5206
+- Processing time: 1556.96 seconds
 
 #### Visualizations
 
 - UMAP: [umap](plots/hla_C_umap.png)
 - TSNE: [tsne](plots/hla_C_tsne.png)
-- PCA: [pca](plots/hla_C_pca.png)
-- GROUPS: Failed to generate
+- PCA: Failed to generate
+- GROUPS: [groups](plots/hla_C_groups.png)
 
