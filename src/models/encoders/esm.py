@@ -68,8 +68,8 @@ class ESMEncoder(HLAEncoder): # Renamed class
         if not cache_dir.name == 'esm': # Ensure the final part is 'esm'
              cache_dir = cache_dir / 'esm'
 
-        # Initialize base class - verify_ssl is removed
-        super().__init__(sequence_file, cache_dir, locus)
+        # Initialize base class - verify_ssl is passed through
+        super().__init__(sequence_file, cache_dir, locus, verify_ssl=verify_ssl)
 
         # Store model name (should be HF identifier now)
         self.model_name = model_name
@@ -105,10 +105,10 @@ class ESMEncoder(HLAEncoder): # Renamed class
             # trust_remote_code=True might be needed for some ESM models if they have custom code
             import os
             os.environ['CURL_CA_BUNDLE'] = ''  # Disable SSL verification for macOS
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_token, trust_remote_code=True, 
-                                                           verify=False, local_files_only=False)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_token, trust_remote_code=True,
+                                                           local_files_only=False)
             self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_token, trust_remote_code=True,
-                                                   verify=False, local_files_only=False)
+                                                   local_files_only=False)
 
             self.model.to(self.device)
             self.model.eval()  # Set to evaluation mode
