@@ -1,5 +1,0 @@
-\beamer@sectionintoc {1}{The Challenge}{4}{0}{1}
-\beamer@sectionintoc {2}{AI Approach}{5}{0}{2}
-\beamer@sectionintoc {3}{Results}{8}{0}{3}
-\beamer@sectionintoc {4}{Applications}{13}{0}{4}
-\beamer@sectionintoc {6}{Technical Appendix}{17}{1}{5}

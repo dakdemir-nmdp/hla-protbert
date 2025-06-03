@@ -1,4 +1,4 @@
-#\!/bin/bash
+#!/bin/bash
 # Full HLA-ProtBERT data generation pipeline
 
 set -e  # Exit on error
@@ -40,4 +40,4 @@ jupyter nbconvert --to notebook --execute notebooks/b_locus_clustering.ipynb --o
 jupyter nbconvert --to notebook --execute notebooks/hla_protbert_demo.ipynb --output executed_hla_protbert_demo.ipynb
 jupyter nbconvert --to notebook --execute notebooks/locus_embeddings_analysis.ipynb --output executed_locus_embeddings_analysis.ipynb
 
-echo "Pipeline complete\! All data and visualizations are now generated."
+echo "Pipeline complete! All data and visualizations are now generated."

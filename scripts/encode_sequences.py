@@ -34,9 +34,9 @@ project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
 # Import project modules
-from src.models.encoders import ProtBERTEncoder, ESMEncoder # Updated import
+from src.models.encoders import ProtBERTEncoder, ESMEncoder
 from src.utils.logging import setup_logging
-from src.utils.config import ConfigManager # Import ConfigManager if needed for defaults
+from src.utils.config import ConfigManager
 
 def parse_fasta(fasta_file):
     """Parse a FASTA file and return sequences and headers"""
@@ -83,17 +83,16 @@ def create_sequences_pickle(fasta_file, output_file):
 
 def generate_embeddings(
     sequence_dict,
-    base_output_dir, # Renamed from output_dir
+    base_output_dir,
     encoder_type,
     model_name,
     device,
     batch_size,
     locus=None,
-    verify_ssl=True # Add verify_ssl parameter
 ):
     """Generate embeddings for sequences using the specified encoder"""
     logger = logging.getLogger(__name__)
-    sequences_file = os.path.join(base_output_dir, "hla_sequences.pkl") # Sequences are shared
+    sequences_file = os.path.join(base_output_dir, "hla_sequences.pkl")
 
     # Save sequences to pickle if not already done (remains in base processed dir)
     if not os.path.exists(sequences_file):
@@ -105,17 +104,13 @@ def generate_embeddings(
     if encoder_type == "protbert":
         EncoderClass = ProtBERTEncoder
         cache_subdir = "protbert"
-        # Add any specific ProtBERT args if needed from config or defaults
         encoder_specific_args = {
-            "use_peptide_binding_region": True, # Example default
-            # "verify_ssl": verify_ssl # ProtBERT might not need this either if using transformers
+            "use_peptide_binding_region": True
         }
-    elif encoder_type == "esm": # Changed 'esm3' to 'esm'
-        EncoderClass = ESMEncoder # Updated class name
-        cache_subdir = "esm" # Updated cache subdir
-        encoder_specific_args = {
-            # verify_ssl is no longer needed by ESMEncoder
-        }
+    elif encoder_type == "esm":
+        EncoderClass = ESMEncoder
+        cache_subdir = "esm"
+        encoder_specific_args = {}
     else:
         raise ValueError(f"Unsupported encoder type: {encoder_type}")
 
@@ -134,7 +129,7 @@ def generate_embeddings(
             model_name=model_name,
             locus=locus,
             device=device,
-            **encoder_specific_args # Pass any specific args
+            **encoder_specific_args
         )
 
         # Get all alleles for the locus or all alleles if locus is None
@@ -238,7 +233,7 @@ def generate_visualizations(embeddings, base_output_dir, encoder_type, prefix="a
 
 def main():
     parser = argparse.ArgumentParser(description="Encode HLA sequences using a specified encoder and generate visualizations.")
-    parser.add_argument('--encoder-type', choices=["protbert", "esm"], default="protbert", # Changed 'esm3' to 'esm'
+    parser.add_argument('--encoder-type', choices=["protbert", "esm"], default="protbert",
                         help="Type of encoder model to use (default: protbert)")
     parser.add_argument('--data-dir', default='data/raw',
                         help='Directory containing FASTA files')
@@ -260,7 +255,7 @@ def main():
     # Setup logging
     log_level = "DEBUG" if args.verbose else "INFO"
     logger = setup_logging(level=log_level)
-    config = ConfigManager() # Load default config if needed for model names etc.
+    config = ConfigManager()
 
     # Ensure base output directory exists
     base_output_dir = Path(args.output_dir)
@@ -271,9 +266,9 @@ def main():
     if args.encoder_type == "protbert":
         default_model = "Rostlab/prot_bert"
         model_config_key = "model.protbert_model"
-    else: # esm
-        default_model = "facebook/esm2_t33_650M_UR50D" # Updated default ESM model
-        model_config_key = "model.esm_model" # Updated config key
+    else:
+        default_model = "facebook/esm2_t33_650M_UR50D"
+        model_config_key = "model.esm_model"
     model_name = args.model or config.get(model_config_key, default_model)
 
 
@@ -329,7 +324,6 @@ def main():
             device=device,
             batch_size=args.batch_size,
             locus=args.locus,
-            # verify_ssl=args.verify_ssl # Removed verify_ssl argument for ESMEncoder
         )
 
         # Generate visualizations (saved in encoder-specific subdir)

@@ -17,7 +17,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.models.encoder import HLAEncoder
 
 # Create a concrete implementation of HLAEncoder for testing
-class TestEncoder(HLAEncoder):
+class MockHLAEncoder(HLAEncoder):
     """Concrete HLAEncoder implementation for testing"""
     
     def _encode_sequence(self, sequence: str) -> np.ndarray:
@@ -49,7 +49,7 @@ class TestHLAEncoder:
     
     def test_initialization(self, sequence_file, cache_dir):
         """Test HLAEncoder initialization"""
-        encoder = TestEncoder(sequence_file, cache_dir)
+        encoder = MockHLAEncoder(sequence_file, cache_dir)
         assert len(encoder.sequences) == 3
         assert 'A*01:01' in encoder.sequences
         assert 'A*02:01' in encoder.sequences
@@ -57,7 +57,7 @@ class TestHLAEncoder:
     
     def test_get_embedding(self, sequence_file, cache_dir):
         """Test get_embedding method"""
-        encoder = TestEncoder(sequence_file, cache_dir)
+        encoder = MockHLAEncoder(sequence_file, cache_dir)
         
         # Get embedding for A*01:01
         embedding = encoder.get_embedding('A*01:01')
@@ -73,7 +73,7 @@ class TestHLAEncoder:
     
     def test_standardize_allele(self, sequence_file, cache_dir):
         """Test allele standardization"""
-        encoder = TestEncoder(sequence_file, cache_dir, locus='A')
+        encoder = MockHLAEncoder(sequence_file, cache_dir, locus='A')
         
         # Test with HLA- prefix
         assert encoder._standardize_allele('HLA-A*01:01') == 'A*01:01'
@@ -86,7 +86,7 @@ class TestHLAEncoder:
     
     def test_batch_encode_alleles(self, sequence_file, cache_dir):
         """Test batch_encode_alleles method"""
-        encoder = TestEncoder(sequence_file, cache_dir)
+        encoder = MockHLAEncoder(sequence_file, cache_dir)
         
         # Batch encode two alleles
         alleles = ['A*01:01', 'A*02:01']

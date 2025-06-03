@@ -1,13 +1,13 @@
 # HLA Locus Embedding Analysis Report
 
-Generated: 2025-05-06 12:42:11
+Generated: 2025-06-03 09:14:07
 
 ## Summary
 
 - Total HLA loci analyzed: 3
 - Total alleles processed: 17279
 - Total embeddings generated: 17279
-- Total processing time: 5029.31 seconds
+- Total processing time: 4770.47 seconds
 
 - Successfully processed: 3 loci
 - Skipped: 0 loci
@@ -20,7 +20,7 @@ Generated: 2025-05-06 12:42:11
 - Status: success
 - Allele count: 5489
 - Embedding count: 5489
-- Processing time: 1601.59 seconds
+- Processing time: 1586.81 seconds
 
 #### Visualizations
 
@@ -34,7 +34,7 @@ Generated: 2025-05-06 12:42:11
 - Status: success
 - Allele count: 6584
 - Embedding count: 6584
-- Processing time: 1870.77 seconds
+- Processing time: 1766.90 seconds
 
 #### Visualizations
 
@@ -48,7 +48,7 @@ Generated: 2025-05-06 12:42:11
 - Status: success
 - Allele count: 5206
 - Embedding count: 5206
-- Processing time: 1556.96 seconds
+- Processing time: 1416.76 seconds
 
 #### Visualizations
 

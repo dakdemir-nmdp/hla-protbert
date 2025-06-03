@@ -4,22 +4,20 @@ Generate HLA Embeddings
 ---------------------
 Script to generate and cache embeddings for HLA alleles using a specified encoder.
 """
-print("DEBUG: Script execution started.") # Add print at the very top
 import os
 import sys
 import argparse
 import logging
 import pandas as pd
-from tqdm import tqdm
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 # Add parent directory to path to import modules
 script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.encoders import ProtBERTEncoder, ESMEncoder # Updated import
+from src.models.encoders import ProtBERTEncoder, ESMEncoder
 from src.utils.logging import setup_logging
 from src.utils.config import ConfigManager
 
@@ -92,7 +90,7 @@ def main():
     """Main function to generate embeddings"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Generate HLA embeddings using a specified encoder.")
-    parser.add_argument("--encoder-type", choices=["protbert", "esm"], default="protbert", # Changed 'esm3' to 'esm'
+    parser.add_argument("--encoder-type", choices=["protbert", "esm"], default="protbert",
                         help="Type of encoder model to use (default: protbert)")
     parser.add_argument("--config", help="Path to configuration file")
     parser.add_argument("--data-dir", dest="data_dir", help="Base data directory")
@@ -111,11 +109,9 @@ def main():
     # Set up logging
     log_level = "DEBUG" if args.verbose else "INFO"
     logger = setup_logging(level=log_level)
-    # print("DEBUG: Logger setup complete.") # Remove this one for now
     
     # Load configuration
     config = ConfigManager(args.config)
-    # print("DEBUG: ConfigManager loaded.") # Remove this one for now
     
     # Determine paths and parameters
     data_dir = args.data_dir or config.get("data.base_dir", str(project_dir / "data"))
@@ -129,7 +125,6 @@ def main():
     )
     device = args.device or config.get("encoder.default_device", "auto")
     batch_size = args.batch_size or config.get("model.batch_size", 8)
-    # print(f"DEBUG: Paths and params determined. Device: {device}, Batch Size: {batch_size}") # Remove this one for now
 
     # Determine model name and cache dir based on encoder type
     if args.encoder_type == "protbert":
@@ -139,21 +134,19 @@ def main():
         cache_subdir = "protbert"
         pooling_strategy = config.get("model.pooling_strategy", "mean") # ProtBERT specific
         use_pbr = config.get("model.use_peptide_binding_region", True) # ProtBERT specific
-    elif args.encoder_type == "esm": # Changed 'esm3' to 'esm'
-        EncoderClass = ESMEncoder # Updated class name
-        default_model = "facebook/esm2_t33_650M_UR50D" # Updated default model
-        model_config_key = "model.esm_model" # Updated config key
-        cache_subdir = "esm" # Reverted to original cache subdir
-        pooling_strategy = config.get("model.esm_pooling_strategy", "mean") # Updated config key
-        use_pbr = False # Not applicable to ESMEncoder
+    elif args.encoder_type == "esm":
+        EncoderClass = ESMEncoder
+        default_model = "facebook/esm2_t33_650M_UR50D"
+        model_config_key = "model.esm_model"
+        cache_subdir = "esm"
+        pooling_strategy = config.get("model.esm_pooling_strategy", "mean")
+        use_pbr = False
     else:
         logger.error(f"Unsupported encoder type: {args.encoder_type}")
         return 1
-    # print(f"DEBUG: Encoder type logic complete. EncoderClass: {EncoderClass.__name__}") # Remove this one for now
 
     model_name = args.model or config.get(model_config_key, default_model)
     final_cache_dir = Path(cache_dir) / cache_subdir # Specific cache dir for this encoder
-    # print(f"DEBUG: Model name: {model_name}, Cache dir: {final_cache_dir}") # Remove this one for now
 
     # Initialize encoder
     logger.info(f"Initializing {args.encoder_type.upper()} encoder (model={model_name}, device={device})")

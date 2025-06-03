@@ -91,12 +91,13 @@ class TestESMEncoder:
         assert encoder.locus == "A"
         
     @patch.object(ESMEncoder, '_load_model')
-    @patch.object(ESMEncoder, '_encode_sequence')
-    def test_batch_encode_alleles_with_force(self, mock_encode_sequence, mock_load_model, 
+    @patch.object(ESMEncoder, 'batch_encode')
+    def test_batch_encode_alleles_with_force(self, mock_batch_encode, mock_load_model, 
                                             sequence_file, cache_dir):
         """Test batch_encode_alleles with force parameter"""
         mock_load_model.return_value = None
-        mock_encode_sequence.return_value = np.ones(768)  # Mock embedding vector
+        # Mock batch_encode to return a numpy array with the correct shape
+        mock_batch_encode.return_value = np.ones((1, 768))  # Return array for 1 sequence
         
         encoder = ESMEncoder(sequence_file, cache_dir, locus="A")
         
@@ -108,17 +109,19 @@ class TestESMEncoder:
         results = encoder.batch_encode_alleles(alleles, force=False)
         
         # Only A*02:01 should be encoded (A*01:01 is in cache)
-        assert mock_encode_sequence.call_count == 1
+        assert mock_batch_encode.call_count == 1
         assert 'A*01:01' in results
         assert 'A*02:01' in results
         
         # Reset mock
-        mock_encode_sequence.reset_mock()
+        mock_batch_encode.reset_mock()
+        # Update mock to return 2 embeddings for force=True test
+        mock_batch_encode.return_value = np.ones((2, 768))
         
         # Test with force=True (should re-encode both)
         results = encoder.batch_encode_alleles(alleles, force=True)
         
         # Both alleles should be encoded
-        assert mock_encode_sequence.call_count == 2
+        assert mock_batch_encode.call_count == 1  # batch_encode is called once with both sequences
         assert 'A*01:01' in results
         assert 'A*02:01' in results
