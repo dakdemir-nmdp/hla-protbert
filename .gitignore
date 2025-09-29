@@ -96,3 +96,8 @@ coverage.xml
 **/.claude/settings.local.json
 
 CLAUDE.md
+
+.github/
+.github
+.github/copilot-instructions.md
+
