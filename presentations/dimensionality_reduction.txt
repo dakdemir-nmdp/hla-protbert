@@ -1,0 +1,49 @@
+graph TB
+    subgraph "High-Dimensional Protein Embeddings"
+        HD[1024-Dimensional Data]
+    end
+
+    HD --> PCA
+    HD --> TSNE
+    HD --> UMAP
+
+    subgraph "PCA"
+        PCA[Principal Component Analysis] --> PCA1[Finds directions of maximum variance]
+        PCA1 --> PCA2[Linear projection]
+        PCA2 --> PCA3[Preserves global structure]
+    end
+
+    subgraph "t-SNE"
+        TSNE[t-Distributed Stochastic Neighbor Embedding] --> TSNE1[Models local similarities]
+        TSNE1 --> TSNE2[Non-linear transformation]
+        TSNE2 --> TSNE3[Preserves local clusters]
+    end
+
+    subgraph "UMAP"
+        UMAP[Uniform Manifold Approximation & Projection] --> UMAP1[Balances local and global structure]
+        UMAP1 --> UMAP2[Non-linear transformation]
+        UMAP2 --> UMAP3[Better preserves true relationships]
+    end
+
+    PCA3 --> 2D1[2D Visualization]
+    TSNE3 --> 2D2[2D Visualization]
+    UMAP3 --> 2D3[2D Visualization]
+
+    style HD fill:#f9f7f7,stroke:#333,stroke-width:2px
+    style PCA fill:#e8f5e9,stroke:#2e7d32
+    style TSNE fill:#e3f2fd,stroke:#1565c0
+    style UMAP fill:#fff3e0,stroke:#e65100
+    style 2D1 fill:#e8f5e9,stroke:#2e7d32
+    style 2D2 fill:#e3f2fd,stroke:#1565c0
+    style 2D3 fill:#fff3e0,stroke:#e65100
+```
+
+**Comparison of Dimensionality Reduction Techniques**
+
+| Technique | Strengths | Best Used For | In Our Analysis |
+|-----------|-----------|---------------|-----------------|
+| **PCA** | Fast, preserves distances between dissimilar points | Getting a global overview of data structure | Shows major HLA group separations |
+| **t-SNE** | Excellent for revealing clusters, preserves local structure | Finding distinct groups in data | Reveals detailed HLA family relationships |
+| **UMAP** | Balances local and global structure, faster than t-SNE | Both cluster detection and global structure | Provides the most balanced view of HLA relationships |
+
+*Each technique offers different insights into the same high-dimensional data*

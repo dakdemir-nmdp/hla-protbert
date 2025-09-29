@@ -1,0 +1,139 @@
+ProteinBERT: Deep Learning for Protein Sequence and Function
+1 source
+This paper introduces ProteinBERT, a novel deep learning model specifically designed for protein sequences and functions, contrasting with existing models primarily developed for natural language. The model employs a unique architecture with local and global representation pathways, combined with a pretraining strategy that includes both language modeling and Gene Ontology (GO) annotation prediction. Despite its smaller size and faster processing compared to other state-of-the-art methods, ProteinBERT achieves comparable or superior performance across various protein property prediction tasks. The authors demonstrate its efficiency, flexibility with long sequences, and the positive impact of pretraining on downstream task performance, making the code and pretrained model publicly available.
+
+What kind of tasks? Which tasks it excelled at? and which tasks it wasn't so good.
+
+ProteinBERT was evaluated on nine benchmarks representing major facets of protein research, covering protein function, structure, post-translational modifications, and biophysical properties. These benchmarks included tasks with local (e.g., post-translational modifications) and global (e.g., remote homology) labels, as well as continuous (e.g., protein stability), binary (e.g., signal peptide), and categorical (e.g., secondary structure) target types.
+Here's a breakdown of its performance:
+Tasks ProteinBERT excelled at (near or exceeding state-of-the-art):
+•
+On the four benchmarks taken from TAPE (Tasks Assessing Protein Embeddings):
+◦
+Secondary structure prediction: ProteinBERT achieved an accuracy of 0.70 without pretraining and 0.74 with pretraining. This was comparable to other models like TAPE Transformer (0.70/0.73) and LSTM (0.71/0.75) and close to the performance of the much larger ProtT5-XL-BFD (0.77).
+◦
+Remote homology detection: ProteinBERT achieved an accuracy of 0.06 without pretraining and 0.22 with pretraining. This was comparable to TAPE Transformer (0.09/0.21) and LSTM (0.12/0.26).
+◦
+Fluorescence prediction: ProteinBERT achieved a Spearman's q of 0.65 without pretraining and 0.66 with pretraining. This was comparable to TAPE Transformer (0.22/0.68) and LSTM (0.21/0.67).
+◦
+Stability prediction: ProteinBERT achieved a Spearman's q of 0.63 without pretraining and 0.76 with pretraining. This performance with pretraining exceeded that of TAPE Transformer ( -0.06/0.73) and LSTM (0.28/0.69).
+•
+The model is highlighted for providing an efficient framework for rapidly training protein predictors and achieving good performance even with limited labeled data.
+Tasks ProteinBERT wasn't so good at (relative to others or showing slight weakness):
+•
+While generally performing well, ProteinBERT's performance sometimes only approached state-of-the-art results. This implies that on some tasks, other models might have achieved slightly better scores. However, the paper emphasizes ProteinBERT's efficiency and smaller size compared to many of these top-performing models.
+•
+ProteinBERT was not designed for pairwise output tasks like 'contact prediction' from TAPE, so this task was not included in the analysis.
+•
+The model showed a tendency to perform slightly worse for longer sequences in most cases, although the decline was reported as modest. However, the authors also note that in some instances, longer sequences achieved better performance, suggesting other factors might be at play.
+It's important to note that pretraining had a major positive effect on ProteinBERT's performance across many tasks. Additionally, ablation testing showed that the novel GO-annotation pretraining task benefited some benchmarks, particularly secondary structure, remote homology, and fold classes.
+training data details, sizes.
+
+ProteinBERT was trained on a substantial amount of data for both pretraining and fine-tuning. Here are the details regarding the training data sizes, according to the sources:
+Pretraining Data:
+•
+ProteinBERT was primarily pretrained on a dataset of approximately 106 million proteins.
+•
+This dataset was derived from UniProtKB/UniRef90, which is a non-redundant set of protein clusters sharing at least 90% sequence identity. This ensures a relatively homogenous coverage of the protein space.
+•
+For each of these approximately 106 million proteins, the amino-acid sequence was extracted.
+•
+Gene Ontology (GO) annotations were also used as a pretraining task. Out of the 106 million proteins, approximately 46 million had at least one of the 8943 most frequent GO annotations (occurring at least 100 times in UniRef90). On average, these 46 million proteins had approximately 2.3 GO annotations each.
+•
+During pretraining, the protein sequences were encoded with varying lengths: 128, 512, or 1024 tokens.
+Fine-tuning Data (Benchmarks):
+Following pretraining, ProteinBERT was fine-tuned and evaluated on nine different benchmarks. The size of the training sets for these benchmarks varied significantly:
+•
+Protein Structure:
+◦
+Secondary structure: 8,678 sequences.
+◦
+Disorder: 8,678 sequences.
+◦
+Remote homology: 12,312 sequences.
+◦
+Fold classes: 15,680 sequences.
+•
+Post-translational modifications:
+◦
+Signal peptide: 16,606 sequences.
+◦
+Major PTMs: 43,356 sequences (note that for local benchmarks like this, the number of training samples is much greater than the number of protein sequences as labels are per residue).
+◦
+Neuropeptide cleavage: 2,727 sequences (again, a local benchmark).
+•
+Biophysical properties:
+◦
+Fluorescence: 21,446 sequences.
+◦
+Stability: 53,679 sequences.
+It's important to remember that for local benchmarks like 'Major PTMs' and 'Neuropeptide cleavage', the number of individual training examples (residue-level labels) is much larger than the number of protein sequences listed.
+Explain figures 2 and 4
+
+Let's break down Figures 2 and 4 from the ProteinBERT paper, drawing on the provided source [btac020ProtBERT.pdf] and our conversation history.
+Figure 2: Pretraining loss
+This figure, titled "Pretraining loss", visualizes how the model's performance improved during the initial pretraining phase. It shows the training-set loss for the two self-supervised pretraining tasks that ProteinBERT was trained on:
+•
+(i) protein sequence language modeling: This task involved the model learning to predict masked or corrupted amino acid tokens within protein sequences. A decreasing loss here indicates that the model is getting better at understanding the patterns and structure of protein sequences.
+•
+(ii) GO annotation recovery: This task involved the model learning to predict Gene Ontology (GO) terms associated with proteins, even when the input GO annotations were corrupted or entirely removed. A decreasing loss here suggests the model is improving at understanding the relationship between protein sequences and their functions (as defined by GO terms).
+The figure displays these losses over the course of pretraining (measured by the first 100 batches of the dataset). Importantly, it shows the loss curves for three different input sequence lengths: 128 tokens, 512 tokens, and 1024 tokens.
+Key observations from Figure 2, as mentioned in the text:
+•
+The language modeling loss continues to improve (decrease) on the training set even after multiple epochs, suggesting that the model is still learning and hasn't fully saturated its ability to model protein sequences. This aligns with findings from other studies on large language models.
+•
+The GO annotations task shows saturation, meaning the loss stops decreasing significantly after a certain point, indicating the model has learned most of the predictable relationships between sequences and the considered GO terms.
+•
+There is somewhat lower performance for the 128-token encoding, as evidenced by a generally higher loss curve compared to the 512 and 1024 token lengths. However, the performance for 512 and 1024 tokens appears similar. This suggests that while the model can learn with shorter sequence segments, longer contexts (up to 512 or 1024 tokens) might provide more information for effective pretraining.
+In summary, Figure 2 demonstrates that ProteinBERT effectively learns from both protein sequences and their GO annotations during the self-supervised pretraining phase, and that the choice of sequence length during pretraining can influence the learning process.
+Figure 4: Performance across sequence lengths
+This figure, titled "Performance across sequence lengths", investigates how well ProteinBERT generalizes to protein sequences of varying lengths after it has been pretrained and then fine-tuned on specific downstream tasks (the nine benchmarks we discussed previously).
+The figure specifically focuses on four out of the nine benchmarks that had a "non-negligible number" (at least 25) of test set records involving proteins longer than 512 tokens. These benchmarks are presented on the y-axis, and the x-axis shows different input sequence lengths used during the evaluation (e.g., 512, 1024, etc.). The performance for each benchmark and sequence length is represented by a boxplot distribution. These boxplots summarize the test-set performance of ProteinBERT models that were fine-tuned from different snapshots taken during the pretraining process (as also depicted in Figure 3).
+The main findings from Figure 4, as described in the text:
+•
+In most cases, ProteinBERT's performance is slightly worse for longer sequences, but the decrease in performance is generally modest. This indicates that the model, while designed to be length-agnostic, might still face slightly increased difficulty in accurately predicting properties of very long proteins compared to shorter ones.
+•
+Interestingly, the authors also note that in some instances, longer sequences achieve better performance (e.g., in 'Major PTMs' with 16384-token sequences, and in 'Neuropeptide cleavage' with 1024-token sequences). This suggests that the relationship between sequence length and performance is not always straightforward and might depend on the specific task and the inherent characteristics of the proteins in that benchmark. The authors speculate that factors other than just sequence length (e.g., the inherent difficulty of predicting secondary structure for longer proteins) might contribute to these performance variations.
+•
+Overall, Figure 4 provides evidence that ProteinBERT indeed generalizes across a very wide range of protein lengths, which is a key advantage of its architecture that avoids positional embeddings and uses global attention. The model's learned parameters are effective even when processing sequences longer than those it might have primarily encountered during pretraining (considering the periodic switching between 128, 512, and 1024 tokens).
+In essence, Figure 4 supports the claim that ProteinBERT possesses sequence length flexibility, a crucial feature for a model aiming to be a universal tool for protein sequence analysis. While there might be slight performance variations with very long sequences, the overall generalization across different lengths is a significant strength of the model.
+
+
+Briefing Document: ProteinBERT - A Universal Deep-Learning Model for Protein Sequence and Function
+Source: Excerpts from "btac020ProtBERT.pdf"
+
+Date: October 26, 2023
+
+1. Introduction:
+
+This document summarizes the key themes and findings from the research paper introducing ProteinBERT, a novel deep learning model specifically designed for protein sequences and their functions. The paper highlights the limitations of applying natural language processing (NLP) models directly to protein sequences and presents ProteinBERT as a more tailored and efficient alternative.
+
+2. Main Themes and Important Ideas:
+
+Protein Sequences as Language: The paper establishes the foundational idea of viewing protein sequences as strings of amino acid "letters," making machine learning methods developed for natural language a relevant approach for predictive protein tasks.
+"Protein sequences can be viewed as strings of amino-acid letters. As such, machine-learning methods developed for natural language and other sequences are a natural fit to predictive protein tasks (Ofer et al., 2021)."
+Limitations of Existing NLP Models for Proteins: The authors argue that standard language models are not optimal for proteins due to fundamental differences between natural language and protein sequences. These include the lack of clear multi-letter building blocks (words, sentences) in proteins, greater variability in protein length, and significant interactions between distant positions due to 3D structure.
+"Thus, their architectures and pretraining tasks may not be optimal for proteins, which, despite many structural similarities, have different properties from human language (Ofer et al., 2021; Strait and Dewey, 1996). Most notably, proteins do not have clear-cut multi-letter building blocks (such as words and sentences). Moreover, proteins are more variable in length than sentences, and show many interactions between distant positions (due to their 3D structure)."
+Introducing ProteinBERT: A Protein-Specific Deep Language Model: The core contribution of the paper is the introduction of ProteinBERT, a deep learning model designed specifically for protein sequences. It improves upon the Transformer/BERT architecture and incorporates a novel pretraining task focused on protein functions.
+"Here, we present ProteinBert, a new deep-learning model designed for protein sequences. We improve upon the classic Transformer/BERT architecture, and introduce a novel pretraining task of predicting protein functions."
+Novel Pretraining Scheme: ProteinBERT is pretrained on a large dataset of approximately 106 million proteins using two simultaneous self-supervised tasks:
+Bidirectional Language Modeling: Similar to BERT, the model learns to predict masked amino acids within a protein sequence.
+Gene Ontology (GO) Annotation Prediction: This novel task requires the model to predict GO terms associated with a protein, capturing diverse aspects of protein function (molecular functions, biological processes, and subcellular locations).
+"Our pretraining scheme combines language modeling with a novel task of Gene Ontology (GO) annotation prediction." "The second task is Gene Ontology (GO) annotation prediction, which captures diverse protein functions (Ashburner et al., 2000). GO annotations are a manually curated set of 45K terms defined at the whole-protein level, covering the en-tire protein space across all organisms. They cover molecular func-tions, biological processes and subcellular locations."
+Efficient and Flexible Architecture: ProteinBERT employs a unique architecture that separates local (character-level) and global (whole-sequence level) representations. This allows for the simultaneous processing of both types of information and makes the model more efficient and flexible in handling long sequences. It utilizes transformer-like blocks with 1D convolutional layers for local representations and fully connected layers for global representations, with information flow facilitated by broadcast fully connected layers and global attention layers.
+"Unlike classic Transformers, ProteinBERT separates local (character level) and global (whole sequence level) representations (as well as inputs and outputs), thereby supporting multitasking of both local and global tasks in a principled way." "The model architecture consists of two almost parallel paths: one for local representations and the other for global representations (Fig. 1)." "The global attention layer, inspired by self-attention (Vaswani et al., 2017), is of linear (rather than quadratic) complexity."
+Strong Performance on Diverse Benchmarks: Despite being significantly smaller and faster than many competing deep learning models (approximately 16 million parameters compared to models with tens or hundreds of millions, or even billions of parameters), ProteinBERT achieves near state-of-the-art, and sometimes exceeds it, on a wide range of protein property prediction benchmarks. These benchmarks cover protein structure, post-translational modifications, and biophysical attributes, with both local (per-residue) and global (per-protein) prediction tasks.
+"ProteinBERT obtains near state-of-the-art performance, and sometimes exceeds it, on multiple benchmarks covering diverse protein properties (including protein structure, post-translational modifications and biophysical attributes), despite using a far smaller and faster model than competing deep-learning methods."
+Transfer Learning Paradigm: The success of ProteinBERT relies on the transfer learning paradigm, where the model is first pretrained on a massive unlabeled dataset (protein sequences and GO annotations) and then fine-tuned on specific downstream tasks with limited labeled data. Pretraining is shown to significantly improve performance on many of these tasks.
+"According to the transfer-learning paradigm, a model is first pre-trained on one task, and then fine-tuned on other down-stream tasks of interest (Do and Ng, 2005; Pan and Yang, 2010; Raffel et al., 2019). Assuming that the pretraining and downstream tasks are somehow related (e.g. both require understanding texts in the same language), pretraining can help the model learn useful rep-resentations for the downstream tasks."
+Generalization Across Protein Lengths: A key advantage of ProteinBERT's architecture is its flexibility and ability to generalize across a wide range of protein sequence lengths without significant performance degradation. This is attributed to the use of convolutional layers, special tokens, and global attention, rather than positional embeddings which can limit generalization to longer sequences.
+"Most importantly, the entire architecture is agnostic to the length of the processed sequences, and it can be applied over sequences of any given length without changing its learned parameters (our experi-ments prove that the model indeed generalizes very well across different lengths)." "Due to the use of global attention rather than self-attention, the amount of computation performed by the model grows only linearly with se-quence length (as opposed to quadratic growth in models with standard self-attention). This linear growth also applies to the mod-el’s memory consumption, allowing ProteinBERT to process ex-tremely long protein sequences (of tens of thousands of amino-acids) intact."
+Insight into Global Attention: The paper provides visualizations of the global attention mechanism, showing that different attention heads learn distinct patterns and that fine-tuning for specific tasks can alter these attention patterns, potentially highlighting regions important for the task (e.g., the cleavage site in signal peptide prediction).
+"Fine-tuning the model on signal peptide prediction appears to have mostly altered the last (6th) global attention layer. For example, attention head #1 in that layer changed to further emphasize the beginning of sequen-ces. In the positive example (Fig. 5, top panel), the largest increase in attention was at the end of the signal peptide (i.e. the cleavage site)."
+Efficient Resource Utilization: Compared to other leading protein language models, ProteinBERT requires significantly less computational resources for pretraining and inference, making it more accessible to a wider range of researchers.
+"ProteinBERT is extremely frugal by comparison to other leading protein language models with respect to size, compute and memory. For example, while ProteinBERT was pretrained for 4 weeks on a sin-gle GPU, UniRep was trained for 3.5 weeks on 4 GPUs (Alley et al., 2019), and ProtTrans’s ProtT5-XL was trained on a supercomputer with thousands of GPUs and TPUs, and is too large to fit a single se-quence on most consumer GPUs (Elnaggar et al., 2021)."
+Open Availability: The authors have made the code, pretrained model weights, and dataset creation scripts publicly available, promoting the adoption and further development of ProteinBERT within the protein research community.
+"Availability and implementation: Code and pretrained model weights are available at https://github.com/nadavbra/ protein_bert." "To facilitate easy usage of ProteinBERT, we provide the pre-trained model as a Python package [based on TensorFlow and Keras (Abadi et al., 2016; Chollet et al., 2015)], which allows automatic downloading of a pretrained model state, fine-tuning and evaluation on labeled datasets, as well as scripts for creating the pretraining dataset."
+3. Conclusion:
+
+ProteinBERT represents a significant advancement in applying deep learning to protein sequence analysis. By specifically designing the model architecture and pretraining tasks for the unique characteristics of proteins, the authors have developed a highly efficient and versatile tool that achieves competitive performance across a broad spectrum of protein prediction tasks. Its smaller size, faster processing, and ability to handle long sequences make it a valuable resource for the protein research community, potentially accelerating the understanding of protein function and facilitating advancements in related fields. The public availability of the model and code further enhances its potential impact.
