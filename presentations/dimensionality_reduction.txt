@@ -1,6 +1,9 @@
+Mermaid source for the dimensionality reduction slide. Defaults align with `scripts/analyze_locus_embeddings.py` (UMAP n_neighbors=15/min_dist=0.1, t-SNE perplexity=30/learning_rate=200, PCA=2 comps).
+
+```mermaid
 graph TB
     subgraph "High-Dimensional Protein Embeddings"
-        HD[1024-Dimensional Data]
+        HD[Embeddings from encoder]
     end
 
     HD --> PCA
@@ -38,7 +41,7 @@ graph TB
     style 2D3 fill:#fff3e0,stroke:#e65100
 ```
 
-**Comparison of Dimensionality Reduction Techniques**
+Comparison of dimensionality reduction techniques
 
 | Technique | Strengths | Best Used For | In Our Analysis |
 |-----------|-----------|---------------|-----------------|

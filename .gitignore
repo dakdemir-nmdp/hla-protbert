@@ -97,7 +97,5 @@ coverage.xml
 
 CLAUDE.md
 
+.cursor/
 .github/
-.github
-.github/copilot-instructions.md
-

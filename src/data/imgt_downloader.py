@@ -1,8 +1,12 @@
 """
 IMGT/HLA Database Downloader
-----------------------------
 Tools to download and update the IMGT/HLA database containing HLA allele sequences.
-Includes fallback to GitHub repository for cloud environments.
+
+Provides robust downloading with multiple sources:
+- Primary: EBI FTP server
+- Fallback: GitHub ANHIG/IMGTHLA repository
+
+Includes automatic retry logic and version tracking.
 """
 import os
 import logging
@@ -13,11 +17,29 @@ from pathlib import Path
 from datetime import datetime
 import json
 from urllib.parse import urljoin
+from typing import Optional, Dict, List, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
 class IMGTDownloader:
-    """Handles downloading and updating IMGT/HLA database files"""
+    """Handles downloading and updating IMGT/HLA database files from multiple sources.
+    
+    Automatically tries FTP and GitHub sources with fallback logic.
+    Tracks versions and download dates for reproducibility.
+    
+    Attributes:
+        data_dir: Path to directory for storing downloaded data
+        use_github_first: Whether to prefer GitHub over FTP
+        ftp_timeout: Timeout for FTP connections in seconds
+    
+    Example:
+        >>> downloader = IMGTDownloader(data_dir='./data/raw')
+        >>> downloader.download_latest()
+        True
+        >>> # Force re-download
+        >>> downloader.download_latest(force=True)
+        True
+    """
     
     # FTP settings (primary source)
     IMGT_FTP_SERVER = "ftp.ebi.ac.uk"
@@ -29,27 +51,50 @@ class IMGTDownloader:
     GITHUB_API_URL = "https://api.github.com/repos/ANHIG/IMGTHLA"
     GITHUB_RAW_URL = "https://raw.githubusercontent.com/ANHIG/IMGTHLA"
     
-    def __init__(self, data_dir='./data/raw', use_github_first=False, ftp_timeout=30):
+    def __init__(
+        self, 
+        data_dir: Union[str, Path] = './data/raw', 
+        use_github_first: bool = False, 
+        ftp_timeout: int = 30
+    ) -> None:
         """Initialize downloader with target directory
         
         Args:
-            data_dir: Directory to store downloaded IMGT/HLA data
-            use_github_first: If True, try GitHub before FTP
-            ftp_timeout: Timeout for FTP connections in seconds
+            data_dir: Directory to store downloaded IMGT/HLA data.
+                Will be created if it doesn't exist.
+            use_github_first: If True, try GitHub before FTP.
+                Useful for environments with FTP restrictions.
+            ftp_timeout: Timeout for FTP connections in seconds.
+                Increase for slow networks.
+                
+        Raises:
+            TypeError: If arguments have incorrect types
+            ValueError: If ftp_timeout < 1
         """
+        if not isinstance(data_dir, (str, Path)):
+            raise TypeError(f"data_dir must be str or Path, got {type(data_dir).__name__}")
+        if not isinstance(use_github_first, bool):
+            raise TypeError(f"use_github_first must be bool, got {type(use_github_first).__name__}")
+        if not isinstance(ftp_timeout, int) or ftp_timeout < 1:
+            raise ValueError(f"ftp_timeout must be int >= 1, got {ftp_timeout}")
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(exist_ok=True, parents=True)
         self.use_github_first = use_github_first
         self.ftp_timeout = ftp_timeout
         
-    def download_latest(self, force=False):
+    def download_latest(self, force: bool = False) -> bool:
         """Download the latest version of IMGT/HLA database
         
         Args:
-            force: If True, download even if version is current
+            force: If True, download even if version is current.
+                Use to refresh data or recover from corrupted downloads.
         
         Returns:
-            bool: True if updated, False if already current
+            True if data was downloaded/updated successfully.
+            
+        Raises:
+            RuntimeError: If all download sources fail
+            IOError: If unable to write downloaded files
         """
         success = False
         

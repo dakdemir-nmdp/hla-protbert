@@ -29,11 +29,15 @@ class ConfigManager:
             "protbert_model": "Rostlab/prot_bert",
             "pooling_strategy": "mean",
             "use_peptide_binding_region": True,
-            "batch_size": 8
+            "batch_size": 8,
+            "ankh_backend": "auto"
         },
         "encoder": {
             "cache_embeddings": True,
             "default_device": "auto"  # "auto", "cpu", or "cuda"
+        },
+        "network": {
+            "verify_ssl": True
         },
         "matching": {
             "loci": ["A", "B", "C", "DRB1", "DQB1", "DPB1"],
@@ -59,7 +63,8 @@ class ConfigManager:
         Args:
             config_path: Path to configuration file (JSON or YAML)
         """
-        self.config = self.DEFAULT_CONFIG.copy()
+        import copy
+        self.config = copy.deepcopy(self.DEFAULT_CONFIG)
         
         # Load from file if provided
         if config_path:
@@ -220,3 +225,42 @@ class ConfigManager:
                 # Set in config
                 self.set(key_path, value)
                 logger.debug(f"Config set from environment: {key_path}={value}")
+    
+    def validate(self) -> bool:
+        """Validate configuration values
+        
+        Returns:
+            True if configuration is valid, False otherwise
+        """
+        try:
+            # Validate data paths exist or can be created
+            for key in ['raw_dir', 'processed_dir', 'embeddings_dir']:
+                path = self.get(f'data.{key}')
+                if path is not None and not isinstance(path, str):
+                    logger.error(f"data.{key} must be string, got {type(path).__name__}")
+                    return False
+            
+            # Validate batch_size is positive
+            batch_size = self.get('model.batch_size')
+            if batch_size is not None and (not isinstance(batch_size, int) or batch_size < 1):
+                logger.error(f"model.batch_size must be positive integer, got {batch_size}")
+                return False
+            
+            # Validate similarity_threshold is in [0, 1]
+            threshold = self.get('matching.similarity_threshold')
+            if threshold is not None and (not isinstance(threshold, (int, float)) or not 0 <= threshold <= 1):
+                logger.error(f"matching.similarity_threshold must be in [0, 1], got {threshold}")
+                return False
+            
+            # Validate loci is list
+            loci = self.get('matching.loci')
+            if loci is not None and not isinstance(loci, list):
+                logger.error(f"matching.loci must be list, got {type(loci).__name__}")
+                return False
+            
+            # All validation passed
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error validating configuration: {e}")
+            return False

@@ -17,7 +17,7 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.encoders import ProtBERTEncoder, ESMEncoder
+from src.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
 from src.utils.logging import setup_logging
 from src.utils.config import ConfigManager
 
@@ -86,11 +86,26 @@ def load_alleles_from_file(file_path: Path) -> List[str]:
     
     return standardized
 
+
+def _to_bool(value, default: bool = False) -> bool:
+    """Best-effort conversion of config/env values to boolean."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return default
+
 def main():
     """Main function to generate embeddings"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Generate HLA embeddings using a specified encoder.")
-    parser.add_argument("--encoder-type", choices=["protbert", "esm"], default="protbert",
+    parser.add_argument("--encoder-type", 
+                        choices=["protbert", "esm", "prott5", "ankh-base", "ankh-large"], 
+                        default="protbert",
                         help="Type of encoder model to use (default: protbert)")
     parser.add_argument("--config", help="Path to configuration file")
     parser.add_argument("--data-dir", dest="data_dir", help="Base data directory")
@@ -103,6 +118,16 @@ def main():
     parser.add_argument("--device", choices=["cpu", "cuda"], help="Device to run model on")
     parser.add_argument("--batch-size", dest="batch_size", type=int, help="Batch size for encoding")
     parser.add_argument("--force", action="store_true", help="Force regeneration of existing embeddings")
+    parser.add_argument(
+        "--disable-ssl-verify",
+        action="store_true",
+        help="Disable SSL certificate verification for Hugging Face downloads (use only on trusted networks)",
+    )
+    parser.add_argument(
+        "--ankh-backend",
+        choices=["auto", "huggingface", "ankh"],
+        help="Backend to use for Ankh encoders (default: auto)",
+    )
     parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose logging")
     args = parser.parse_args()
     
@@ -112,7 +137,23 @@ def main():
     
     # Load configuration
     config = ConfigManager(args.config)
-    
+
+    # Determine SSL handling (config < env < CLI)
+    verify_ssl = _to_bool(config.get("network.verify_ssl", True), True)
+    env_disable_ssl = os.environ.get("HLA_DISABLE_SSL_VERIFY")
+    if env_disable_ssl is not None and _to_bool(env_disable_ssl, False):
+        verify_ssl = False
+    if args.disable_ssl_verify:
+        verify_ssl = False
+
+    if not verify_ssl:
+        logger.warning(
+            "SSL certificate verification disabled for Hugging Face downloads. "
+            "Only use this option on networks you trust."
+        )
+
+    ankh_backend = args.ankh_backend or config.get("model.ankh_backend", "auto")
+
     # Determine paths and parameters
     data_dir = args.data_dir or config.get("data.base_dir", str(project_dir / "data"))
     sequences_file = args.sequences or config.get(
@@ -132,8 +173,9 @@ def main():
         default_model = "Rostlab/prot_bert"
         model_config_key = "model.protbert_model"
         cache_subdir = "protbert"
-        pooling_strategy = config.get("model.pooling_strategy", "mean") # ProtBERT specific
-        use_pbr = config.get("model.use_peptide_binding_region", True) # ProtBERT specific
+        pooling_strategy = config.get("model.pooling_strategy", "mean")
+        use_pbr = config.get("model.use_peptide_binding_region", True)
+        model_variant = None
     elif args.encoder_type == "esm":
         EncoderClass = ESMEncoder
         default_model = "facebook/esm2_t33_650M_UR50D"
@@ -141,6 +183,31 @@ def main():
         cache_subdir = "esm"
         pooling_strategy = config.get("model.esm_pooling_strategy", "mean")
         use_pbr = False
+        model_variant = None
+    elif args.encoder_type == "prott5":
+        EncoderClass = ProtT5Encoder
+        default_model = "Rostlab/prot_t5_xl_uniref50"
+        model_config_key = "model.prott5_model"
+        cache_subdir = "prott5"
+        pooling_strategy = config.get("model.prott5_pooling_strategy", "mean")
+        use_pbr = False
+        model_variant = None
+    elif args.encoder_type == "ankh-base":
+        EncoderClass = AnkhEncoder
+        default_model = None  # Will use model_variant
+        model_config_key = "model.ankh_model"
+        cache_subdir = "ankh"
+        pooling_strategy = config.get("model.ankh_pooling_strategy", "mean")
+        use_pbr = False
+        model_variant = "base"
+    elif args.encoder_type == "ankh-large":
+        EncoderClass = AnkhEncoder
+        default_model = None  # Will use model_variant
+        model_config_key = "model.ankh_model"
+        cache_subdir = "ankh"
+        pooling_strategy = config.get("model.ankh_pooling_strategy", "mean")
+        use_pbr = False
+        model_variant = "large"
     else:
         logger.error(f"Unsupported encoder type: {args.encoder_type}")
         return 1
@@ -149,28 +216,37 @@ def main():
     final_cache_dir = Path(cache_dir) / cache_subdir # Specific cache dir for this encoder
 
     # Initialize encoder
-    logger.info(f"Initializing {args.encoder_type.upper()} encoder (model={model_name}, device={device})")
+    logger.info(f"Initializing {args.encoder_type.upper()} encoder (model={model_name or model_variant}, device={device})")
     try:
         encoder_args = {
             "sequence_file": sequences_file,
             "cache_dir": final_cache_dir,
-            "model_name": model_name,
             "locus": args.locus,
             "device": device,
             "pooling_strategy": pooling_strategy
         }
         
-        # Add HF token if available in config (for ESM)
-        if args.encoder_type == "esm":
+        # Add model_name for encoders that use it (not Ankh with variant)
+        if model_name:
+            encoder_args["model_name"] = model_name
+        
+        # Add model_variant for Ankh encoders
+        if model_variant:
+            encoder_args["model_variant"] = model_variant
+
+        # Add HF token if available in config (for ESM, ProtT5, Ankh)
+        if args.encoder_type in ["esm", "prott5", "ankh-base", "ankh-large"]:
             hf_token = config.get("model.hf_token", None)
             if hf_token:
                 encoder_args["hf_token"] = hf_token
+        if args.encoder_type in ["ankh-base", "ankh-large"]:
+            encoder_args["backend"] = ankh_backend
                 
         # Add ProtBERT specific args if applicable
         if args.encoder_type == "protbert":
             encoder_args["use_peptide_binding_region"] = use_pbr
-            # Potentially add verify_ssl for ProtBERT if it still needs it
 
+        encoder_args["verify_ssl"] = verify_ssl
         encoder = EncoderClass(**encoder_args)
 
     except Exception as e:

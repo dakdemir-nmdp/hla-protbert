@@ -32,7 +32,31 @@ except ImportError:
     PDF_AVAILABLE = False
 
 class MatchingAnalyzer:
-    """Analyzes HLA matching between donors and recipients"""
+    """Analyzes HLA matching between donors and recipients using embedding-based similarity.
+    
+    Provides comprehensive HLA matching analysis including:
+    - Embedding-based similarity scoring
+    - Locus-weighted matching
+    - Best donor identification
+    - Match quality assessment
+    - Visualization and reporting
+    
+    Attributes:
+        encoder: HLAEncoder instance for generating embeddings
+        loci: List of HLA loci to consider in matching
+        locus_weights: Importance weights for each locus
+        similarity_threshold: Threshold for functional similarity (0-1)
+    
+    Example:
+        >>> from hla_protbert import ProtBERTEncoder
+        >>> encoder = ProtBERTEncoder("data/sequences.pkl")
+        >>> analyzer = MatchingAnalyzer(encoder, loci=["A", "B", "DRB1"])
+        >>> recipient = ["A*01:01", "A*02:01", "B*07:02", "B*08:01"]
+        >>> donor = ["A*01:01", "A*03:01", "B*07:02", "B*15:01"]
+        >>> score = analyzer.calculate_match_score(recipient, donor)
+        >>> score
+        0.87
+    """
     
     # Standard loci to consider for matching analysis
     STANDARD_LOCI = ["A", "B", "C", "DRB1", "DQB1", "DPB1"]
@@ -61,14 +85,38 @@ class MatchingAnalyzer:
             loci: List of HLA loci to consider (defaults to standard loci)
             locus_weights: Dict mapping loci to importance weights
             similarity_threshold: Threshold for considering alleles functionally similar
+        ) -> None:
+        self.encoder = encoder
+        self.loci = loci or self.STANDARD_LOCI
+        self.locus_weights = locus_weights or self.LOCUS_WEIGHTS
+                encoder: HLAEncoder instance used to generate embeddings.
+                    Must be initialized with appropriate sequence data.
+                loci: List of HLA loci to consider in matching.
+                    Defaults to ["A", "B", "C", "DRB1", "DQB1", "DPB1"].
+                locus_weights: Dictionary mapping loci to importance weights (0-1).
+                    Higher weights give more importance in overall match scores.
+                    Defaults to standard clinical weighting.
+                similarity_threshold: Threshold (0-1) for considering alleles
+                    functionally similar based on embedding distance.
+                
+            Raises:
+                TypeError: If encoder lacks required methods or loci not list
+                ValueError: If similarity_threshold not in [0, 1]
         """
+        if not hasattr(encoder, 'get_embedding'):
+            raise TypeError("encoder must have get_embedding method")
+        if loci is not None and not isinstance(loci, list):
+            raise TypeError(f"loci must be list or None, got {type(loci).__name__}")
+        if not 0 <= similarity_threshold <= 1:
+            raise ValueError(f"similarity_threshold must be in [0, 1], got {similarity_threshold}")
+        
         self.encoder = encoder
         self.loci = loci or self.STANDARD_LOCI
         self.locus_weights = locus_weights or self.LOCUS_WEIGHTS
         self.similarity_threshold = similarity_threshold
     
     def group_alleles_by_locus(self, alleles: List[str]) -> Dict[str, List[str]]:
-        """Group alleles by locus
+        """Group HLA alleles by locus
         
         Args:
             alleles: List of HLA allele names
@@ -530,6 +578,122 @@ class MatchingAnalyzer:
                 return fig
         else:
             return fig
+
+    def calculate_locus_similarity(
+        self, 
+        recipient_alleles: List[str], 
+        donor_alleles: List[str]
+    ) -> float:
+        """Calculate average similarity for a specific locus
+        
+        Args:
+            recipient_alleles: List of recipient alleles for this locus
+            donor_alleles: List of donor alleles for this locus
+            
+        Returns:
+            Average similarity score (0-1)
+        """
+        if not recipient_alleles or not donor_alleles:
+            return 0.0
+        
+        similarities = []
+        
+        for r_allele in recipient_alleles:
+            # Find best match from donor alleles
+            _, similarity = self.find_best_match(r_allele, donor_alleles)
+            similarities.append(similarity)
+        
+        return np.mean(similarities) if similarities else 0.0
+    
+    def calculate_match_score(
+        self, 
+        recipient_alleles: List[str], 
+        donor_alleles: List[str]
+    ) -> float:
+        """Calculate overall weighted match score between recipient and donor
+        
+        Args:
+            recipient_alleles: List of all recipient HLA alleles
+            donor_alleles: List of all donor HLA alleles
+            
+        Returns:
+            Overall match score (0-1), weighted by locus importance
+        """
+        # Group by locus
+        recipient_by_locus = self.group_alleles_by_locus(recipient_alleles)
+        donor_by_locus = self.group_alleles_by_locus(donor_alleles)
+        
+        # Find common loci
+        common_loci = set(recipient_by_locus.keys()) & set(donor_by_locus.keys())
+        
+        # Filter to requested loci
+        if self.loci:
+            common_loci = common_loci & set(self.loci)
+        
+        if not common_loci:
+            return 0.0
+        
+        # Calculate weighted similarity for each locus
+        weighted_scores = []
+        total_weight = 0.0
+        
+        for locus in common_loci:
+            # Get weight for this locus
+            weight = self.locus_weights.get(locus, 1.0)
+            
+            # Calculate locus similarity
+            locus_similarity = self.calculate_locus_similarity(
+                recipient_by_locus[locus],
+                donor_by_locus[locus]
+            )
+            
+            weighted_scores.append(locus_similarity * weight)
+            total_weight += weight
+        
+        # Return weighted average
+        if total_weight > 0:
+            return sum(weighted_scores) / total_weight
+        else:
+            return 0.0
+    
+    def identify_mismatches(
+        self,
+        recipient_alleles: List[str],
+        donor_alleles: List[str]
+    ) -> List[Tuple[str, str, float]]:
+        """Identify mismatched alleles between recipient and donor
+        
+        Args:
+            recipient_alleles: List of recipient HLA alleles
+            donor_alleles: List of donor HLA alleles
+            
+        Returns:
+            List of tuples (recipient_allele, best_donor_match, similarity)
+            for alleles below similarity threshold
+        """
+        # Group by locus
+        recipient_by_locus = self.group_alleles_by_locus(recipient_alleles)
+        donor_by_locus = self.group_alleles_by_locus(donor_alleles)
+        
+        # Find mismatches
+        mismatches = []
+        
+        # Check each locus
+        common_loci = set(recipient_by_locus.keys()) & set(donor_by_locus.keys())
+        
+        for locus in common_loci:
+            for r_allele in recipient_by_locus[locus]:
+                # Find best donor match
+                best_match, similarity = self.find_best_match(
+                    r_allele, 
+                    donor_by_locus[locus]
+                )
+                
+                # Check if it's a mismatch (not exact and below threshold)
+                if best_match != r_allele and similarity < self.similarity_threshold:
+                    mismatches.append((r_allele, best_match, similarity))
+        
+        return mismatches
 
 
 class DonorRankingAnalyzer:

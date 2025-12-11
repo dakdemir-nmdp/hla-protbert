@@ -1,8 +1,9 @@
+Mermaid source for the transformer architecture slide shared across encoders.
+
+```mermaid
 flowchart TD
-    A[Protein Sequence\nM K T I I A L...] --> B[Embedding Layer]
-    B --> C[Positional Encoding]
-    
-    C --> D[Self-Attention Layer 1]
+    A[Protein Sequence\nM K T I I A L...] --> B[Token + positional embedding]
+    B --> D[Self-Attention Layer 1]
     D --> E[Feed-Forward Network 1]
     E --> F[Layer Normalization 1]
     
@@ -12,13 +13,13 @@ flowchart TD
     
     I --> J[...More Layers...]
     
-    J --> K[Final Layer\nTransformer Output]
-    K --> L[Protein Embedding\nVector Representation]
+    J --> K[Encoder Output]
+    K --> L[Protein Embedding\nPooled representation]
     
     subgraph "Self-Attention Mechanism"
-        SA1[Input Split into Queries,\nKeys, and Values] --> SA2[Compute Attention Scores]
-        SA2 --> SA3[Apply Softmax to Get\nAttention Weights]
-        SA3 --> SA4[Weight Values and Combine]
+        SA1[Input split into Queries,\nKeys, and Values] --> SA2[Compute attention scores]
+        SA2 --> SA3[Softmax weights]
+        SA3 --> SA4[Weighted sum of Values]
     end
     
     style A fill:#f9f7f7,stroke:#333
@@ -30,7 +31,7 @@ flowchart TD
 ```
 
 Key Concepts:
-1. The model takes protein sequences as input (amino acids with spaces)
-2. Self-attention allows each amino acid to "focus" on relevant parts of the sequence
-3. Multiple transformer layers process the data, learning increasingly complex patterns
-4. The final output is a dense vector that captures the protein's functional and structural properties
+1. Protein tokens are embedded and passed through stacked attention + feed-forward blocks.
+2. Self-attention lets each amino acid weigh context across the sequence.
+3. Layer normalization stabilizes training across blocks.
+4. The pooled encoder output is the embedding used for downstream HLA analysis.

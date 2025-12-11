@@ -7,7 +7,7 @@ import os
 import pickle
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 # Try to import BioPython's SeqIO for FASTA parsing
 try:
@@ -19,15 +19,40 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 class IMGTParser:
-    """Parser for IMGT/HLA database files"""
+    """Parser for IMGT/HLA database FASTA files.
     
-    def __init__(self, imgt_dir='./data/raw', output_dir='./data/processed'):
+    Extracts protein sequences from IMGT/HLA database FASTA files and
+    processes them into standardized formats for downstream analysis.
+    Supports both consolidated files and individual locus files.
+    
+    Attributes:
+        imgt_dir: Path to directory containing raw IMGT/HLA FASTA files
+        output_dir: Path to directory for processed output files
+    
+    Example:
+        >>> parser = IMGTParser(imgt_dir='./data/raw', output_dir='./data/processed')
+        >>> sequences = parser.parse_protein_sequences()
+        >>> len(sequences)
+        15432
+    """
+    
+    def __init__(self, imgt_dir: Union[str, Path] = './data/raw', output_dir: Union[str, Path] = './data/processed') -> None:
         """Initialize parser with input and output directories
         
         Args:
-            imgt_dir: Directory containing raw IMGT/HLA data
-            output_dir: Directory to store processed data
+            imgt_dir: Directory containing raw IMGT/HLA FASTA data.
+                Must contain either 'hla_prot.fasta' or 'fasta/' subdirectory
+                with individual locus files (e.g., 'A_prot.fasta', 'B_prot.fasta').
+            output_dir: Directory to store processed sequence data.
+                Will be created if it doesn't exist.
+                
+        Raises:
+            TypeError: If imgt_dir or output_dir not string/Path
         """
+        if not isinstance(imgt_dir, (str, Path)):
+            raise TypeError(f"imgt_dir must be str or Path, got {type(imgt_dir).__name__}")
+        if not isinstance(output_dir, (str, Path)):
+            raise TypeError(f"output_dir must be str or Path, got {type(output_dir).__name__}")
         self.imgt_dir = Path(imgt_dir)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True, parents=True)

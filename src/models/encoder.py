@@ -2,13 +2,25 @@
 HLA Encoder Base Class
 ---------------------
 Base class for HLA sequence encoders with common functionality.
+
+This module provides the abstract base class for all HLA encoders in the system.
+All encoder implementations (ProtBERT, ESM, etc.) must inherit from this class
+and implement the required abstract methods.
 """
 import os
 import pickle
 import logging
 import numpy as np
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union, Any
+
+try:
+    from huggingface_hub import configure_http_backend
+    HF_HUB_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency
+    configure_http_backend = None
+    HF_HUB_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -20,38 +32,78 @@ except ImportError:
     logger.warning("py-ard not installed; allele resolution mapping will be limited")
     PYARD_AVAILABLE = False
 
-class HLAEncoder:
-    """Base class for HLA encoders
+
+class HLAEncoder(ABC):
+    """Abstract base class for HLA allele encoders.
     
     Provides common functionality for different encoder implementations:
     - Cache management for embeddings
     - Fallback mechanisms for allele resolution
     - Sequence retrieval and standardization
+    - Similarity search
     
-    Subclasses should implement _encode_sequence method.
+    Subclasses must implement the abstract method:
+        - _encode_sequence: Convert a protein sequence to an embedding vector
+    
+    Attributes:
+        sequence_file: Path to pickle file containing HLA sequences
+        cache_dir: Directory for caching embeddings
+        locus: Optional HLA locus filter (e.g., 'A', 'B', 'DRB1')
+        verify_ssl: Whether to verify SSL certificates
+        sequences: Dictionary mapping allele names to protein sequences
+        embeddings: Dictionary mapping allele names to embedding vectors
+        ard: Optional ARD (Allele Resolution) mapper instance
+        
+    Example:
+        >>> # Subclass implementation
+        >>> class MyEncoder(HLAEncoder):
+        ...     def _encode_sequence(self, sequence: str) -> np.ndarray:
+        ...         # Custom encoding logic
+        ...         return np.random.rand(768)
+        >>> 
+        >>> encoder = MyEncoder("data/sequences.pkl")
+        >>> embedding = encoder.get_embedding("A*01:01")
     """
     
+    _current_ssl_verification: Optional[bool] = None
+
     def __init__(
         self, 
         sequence_file: Union[str, Path],
         cache_dir: Union[str, Path] = "./data/embeddings",
         locus: Optional[str] = None,
-        verify_ssl: bool = False
-    ):
-        """Initialize encoder
+        verify_ssl: bool = True
+    ) -> None:
+        """Initialize encoder with sequence data and configuration.
         
         Args:
-            sequence_file: Path to pickle file with HLA sequences
-            cache_dir: Directory to cache embeddings
-            locus: HLA locus to encode (e.g., 'A', 'B', 'DRB1')
-                   If provided, only alleles of this locus will be encoded
-            verify_ssl: Whether to verify SSL certificates when downloading models
+            sequence_file: Path to pickle file with HLA sequences. Must exist and contain
+                a dictionary mapping allele names to protein sequences.
+            cache_dir: Directory to cache embeddings. Will be created if it doesn't exist.
+                Defaults to "./data/embeddings".
+            locus: HLA locus to encode (e.g., 'A', 'B', 'DRB1'). If provided, only alleles
+                of this locus will be encoded. None means all loci will be processed.
+            verify_ssl: Whether to verify SSL certificates when downloading models.
+                Set to False for systems with SSL issues.
+                
+        Raises:
+            TypeError: If sequence_file or cache_dir are not string or Path objects
+            FileNotFoundError: If sequence_file does not exist
+            ValueError: If locus is provided but invalid format
         """
+        # Validate input types
+        if not isinstance(sequence_file, (str, Path)):
+            raise TypeError(f"sequence_file must be str or Path, got {type(sequence_file)}")
+        if not isinstance(cache_dir, (str, Path)):
+            raise TypeError(f"cache_dir must be str or Path, got {type(cache_dir)}")
+        if locus is not None and not isinstance(locus, str):
+            raise TypeError(f"locus must be str or None, got {type(locus)}")
         self.sequence_file = Path(sequence_file)
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(exist_ok=True, parents=True)
         self.locus = locus
-        self.verify_ssl = verify_ssl
+        self.verify_ssl = bool(verify_ssl)
+        self._configure_ssl_verification()
         
         # Set cache file based on locus
         if locus:
@@ -67,6 +119,53 @@ class HLAEncoder:
         
         # Load cached embeddings
         self.embeddings = self._load_embedding_cache()
+
+    def _configure_ssl_verification(self) -> None:
+        """Configure SSL verification for Hugging Face Hub downloads."""
+        cls = self.__class__
+        desired_state = bool(self.verify_ssl)
+
+        # Default state is already verified; no need to reconfigure until toggled
+        if desired_state and cls._current_ssl_verification is None:
+            cls._current_ssl_verification = True
+            return
+
+        if cls._current_ssl_verification == desired_state:
+            return
+
+        if not HF_HUB_AVAILABLE:
+            if not desired_state:
+                logger.warning(
+                    "huggingface_hub is not installed; cannot disable SSL verification. "
+                    "Install huggingface_hub or keep verify_ssl=True."
+                )
+            return
+
+        if desired_state:
+            configure_http_backend()
+            logger.info("Re-enabled SSL verification for Hugging Face Hub downloads")
+        else:
+            import requests
+            try:
+                import urllib3
+            except ImportError:  # pragma: no cover - urllib3 is a requests dependency
+                urllib3 = None
+
+            def insecure_backend_factory():
+                session = requests.Session()
+                session.verify = False
+                session.trust_env = True
+                return session
+
+            configure_http_backend(backend_factory=insecure_backend_factory)
+            if urllib3 is not None:
+                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            logger.warning(
+                "Disabled SSL verification for Hugging Face Hub downloads. "
+                "Only use this option on trusted networks."
+            )
+
+        cls._current_ssl_verification = desired_state
     
     def _load_sequences(self) -> None:
         """Load HLA sequences from file"""
@@ -184,49 +283,66 @@ class HLAEncoder:
         return None
     
     def _standardize_allele(self, allele: str) -> str:
-        """Standardize allele name format
+        """Standardize allele name format with locus-specific inference
         
         Args:
             allele: HLA allele name
             
         Returns:
             Standardized allele name
+            
+        Note:
+            Uses HLASequenceUtils.standardize_allele_name() for standard formats.
+            When encoder is bound to a specific locus (self.locus is set), can infer
+            locus from pure digit formats (e.g., '0101' -> 'A*01:01' if locus='A').
+            
+            WARNING: Only use digit-only formats in locus-specific contexts to avoid
+            ambiguity (A0101 could be A*01:01 or A*10:10:1).
         """
-        # Remove HLA- prefix if present
-        if allele.startswith('HLA-'):
-            allele = allele[4:]
+        from src.data.sequence_utils import HLASequenceUtils
         
-        # Handle format without '*'
-        if '*' not in allele and self.locus:
-            if allele.startswith(self.locus):
-                # Format like A0101
-                if len(allele) > len(self.locus) and allele[len(self.locus):].isdigit():
-                    digits = allele[len(self.locus):]
-                    if len(digits) == 4:  # 4-digit format like A0101
-                        return f"{self.locus}*{digits[:2]}:{digits[2:]}"
-            else:
-                # Just digits, assume current locus
-                if allele.isdigit() and len(allele) == 4:
-                    return f"{self.locus}*{allele[:2]}:{allele[2:]}"
+        # Handle pure digit formats ONLY when locus is explicitly known
+        # This is safe because locus context eliminates ambiguity
+        if self.locus and allele.isdigit() and len(allele) == 4:
+            return f"{self.locus}*{allele[:2]}:{allele[2:]}"
         
-        return allele
+        # Delegate to utility function for all standard IMGT/HLA formats
+        return HLASequenceUtils.standardize_allele_name(allele)
     
     def get_embedding(self, allele: str, force: bool = False) -> np.ndarray:
-        """Get embedding for an allele
+        """Get embedding vector for a single HLA allele.
         
-        If the embedding is cached and force=False, returns it directly.
-        Otherwise, gets the sequence and encodes it.
+        Retrieves cached embedding if available and force=False. Otherwise,
+        fetches the protein sequence and generates a new embedding using
+        the encoder's model. Automatically caches new embeddings.
         
         Args:
-            allele: HLA allele name
-            force: If True, regenerate embedding even if cached
+            allele: HLA allele identifier (e.g., "A*01:01", "B*07:02").
+                Accepts multiple formats and applies automatic standardization.
+            force: If True, regenerate embedding even if already cached.
+                Useful for testing or when encoder parameters have changed.
             
         Returns:
-            Embedding vector
+            Embedding vector as numpy array of shape (embedding_dim,).
+            Typically 768 for ProtBERT or 1280 for ESM-2.
             
         Raises:
-            ValueError: If no sequence found for allele
+            TypeError: If allele is not a string
+            ValueError: If no sequence found for the allele after trying all
+                resolution fallbacks (2-field, ARD mapping, 1-field)
+            RuntimeError: If encoding fails due to model errors
+            
+        Example:
+            >>> encoder = ProtBERTEncoder("data/sequences.pkl")
+            >>> embedding = encoder.get_embedding("A*01:01")
+            >>> embedding.shape
+            (768,)
+            >>> # Force regeneration
+            >>> embedding = encoder.get_embedding("A*01:01", force=True)
         """
+        # Validate input type
+        if not isinstance(allele, str):
+            raise TypeError(f"allele must be string, got {type(allele).__name__}")
         # Standardize allele name
         allele = self._standardize_allele(allele)
         
@@ -248,30 +364,78 @@ class HLAEncoder:
         
         return embedding
     
+    @abstractmethod
     def _encode_sequence(self, sequence: str) -> np.ndarray:
-        """Encode a protein sequence to a vector
+        """Encode a protein sequence to an embedding vector.
         
-        This method should be implemented by subclasses.
+        This is the core encoding method that must be implemented by all subclasses.
+        Each encoder (ProtBERT, ESM, etc.) implements its own encoding strategy.
         
         Args:
-            sequence: Protein sequence
+            sequence: Protein sequence string (amino acid sequence)
             
         Returns:
-            Embedding vector
+            Embedding vector as numpy array of shape (embedding_dim,)
+            
+        Raises:
+            ValueError: If sequence is empty or contains invalid characters
+            RuntimeError: If encoding fails due to model errors
+            
+        Note:
+            Subclasses should handle model-specific preprocessing, tokenization,
+            and pooling strategies within this method.
         """
-        raise NotImplementedError("Subclasses must implement _encode_sequence")
+        pass
     
-    def batch_encode_alleles(self, alleles: List[str], batch_size: int = 8, force: bool = False) -> Dict[str, np.ndarray]:
-        """Encode multiple alleles in batch
+    def batch_encode_alleles(
+        self, 
+        alleles: List[str], 
+        batch_size: int = 8, 
+        force: bool = False
+    ) -> Dict[str, np.ndarray]:
+        """Encode multiple HLA alleles efficiently with optional batching.
+        
+        Default implementation iterates over get_embedding(). Subclasses should
+        override this for true batch processing when their models support it
+        (e.g., ESM, ProtBERT with GPU).
         
         Args:
-            alleles: List of HLA allele names
-            batch_size: Size of batches for encoding (for subclasses that do true batching)
-            force: If True, regenerate embeddings even if already cached
+            alleles: List of HLA allele identifiers to encode.
+                Can include duplicates (will be encoded once).
+            batch_size: Number of sequences to process simultaneously.
+                Only used by subclasses with true batch encoding.
+                Larger values increase speed but require more memory.
+            force: If True, regenerate embeddings even if cached.
+                Applies to all alleles in the list.
             
         Returns:
-            Dict mapping allele names to embeddings
+            Dictionary mapping allele identifiers to embedding vectors.
+            Failed alleles are omitted (not included in result).
+            
+        Raises:
+            TypeError: If alleles is not a list or contains non-strings
+            ValueError: If batch_size < 1
+            
+        Example:
+            >>> encoder = ProtBERTEncoder("data/sequences.pkl")
+            >>> alleles = ["A*01:01", "A*02:01", "B*07:02"]
+            >>> embeddings = encoder.batch_encode_alleles(alleles, batch_size=16)
+            >>> len(embeddings)
+            3
+            >>> embeddings["A*01:01"].shape
+            (768,)
+            
+        Note:
+            Progress bar displayed automatically for >100 alleles.
+            Failed encodings logged as warnings but don't stop processing.
         """
+        # Validate inputs
+        if not isinstance(alleles, list):
+            raise TypeError(f"alleles must be list, got {type(alleles).__name__}")
+        if not all(isinstance(a, str) for a in alleles):
+            raise TypeError("All alleles must be strings")
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         # Default implementation iterates over get_embedding.
         # Subclasses (like ESMEncoder) should override this for true batching.
         results = {}
@@ -302,16 +466,53 @@ class HLAEncoder:
         top_k: int = 5, 
         metric: str = 'cosine'
     ) -> List[Tuple[str, float]]:
-        """Find most similar alleles to the given allele
+        """Find most similar alleles to a query allele based on embedding similarity.
+        
+        Computes similarity between query allele and all cached embeddings,
+        returning the top-k most similar matches. Useful for identifying
+        functionally similar alleles or potential cross-reactivity.
         
         Args:
-            allele: Query HLA allele
-            top_k: Number of similar alleles to return
-            metric: Similarity metric ('cosine', 'euclidean', 'manhattan')
+            allele: Query HLA allele identifier (e.g., "A*01:01").
+            top_k: Number of most similar alleles to return.
+                Must be positive. If more than available alleles, returns all.
+            metric: Distance/similarity metric to use:
+                - 'cosine': Cosine similarity (1=identical, 0=orthogonal, -1=opposite)
+                - 'euclidean': Negative Euclidean distance (higher=more similar)
+                - 'manhattan': Negative Manhattan/L1 distance (higher=more similar)
             
         Returns:
-            List of (allele_name, similarity_score) tuples
+            List of (allele_name, similarity_score) tuples, sorted by
+            similarity descending. Query allele excluded from results.
+            Empty list if query allele embedding cannot be generated.
+            
+        Raises:
+            TypeError: If allele is not string or top_k not int
+            ValueError: If metric not in supported metrics or top_k < 1
+            
+        Example:
+            >>> encoder = ProtBERTEncoder("data/sequences.pkl")
+            >>> # Find alleles similar to A*01:01
+            >>> similar = encoder.find_similar_alleles("A*01:01", top_k=3)
+            >>> for allele, score in similar:
+            ...     print(f"{allele}: {score:.3f}")
+            A*01:02: 0.995
+            A*01:03: 0.987
+            A*01:04: 0.981
+            
+        Note:
+            Requires embeddings to already be cached. Run batch_encode_alleles
+            first to populate cache if needed.
         """
+        # Validate inputs
+        if not isinstance(allele, str):
+            raise TypeError(f"allele must be string, got {type(allele).__name__}")
+        if not isinstance(top_k, int):
+            raise TypeError(f"top_k must be int, got {type(top_k).__name__}")
+        if top_k < 1:
+            raise ValueError(f"top_k must be >= 1, got {top_k}")
+        if metric not in ('cosine', 'euclidean', 'manhattan'):
+            raise ValueError(f"metric must be 'cosine', 'euclidean', or 'manhattan', got '{metric}'")
         # Get query embedding
         try:
             query_embedding = self.get_embedding(allele)

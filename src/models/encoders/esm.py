@@ -10,7 +10,6 @@ import torch
 from typing import Dict, List, Optional, Tuple, Union
 from pathlib import Path
 from tqdm import tqdm
-import logging # Keep logging import
 
 # Import base encoder (one level up)
 from ..encoder import HLAEncoder

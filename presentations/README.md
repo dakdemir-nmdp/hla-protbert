@@ -1,65 +1,64 @@
 # HLA-ProtBERT Presentation
 
-This directory contains a LaTeX Beamer presentation about the HLA-ProtBERT model and its locus embedding analysis.
+Project briefings and slides for the HLA-ProtBERT codebase live here. The slides now reflect the current multi-encoder pipeline (ProtBERT, ESM-2, ProtT5, Ankh Base, Ankh Large) and the latest IMGT/HLA sequence snapshot.
 
 ## Contents
 
-- `hla_protbert_presentation.tex`: The main LaTeX source file for the presentation
-- `references.bib`: Bibliography file with citations
-- `diagram_descriptions.txt`: Descriptions of the diagrams referenced in the presentation
+- `hla_protbert_presentation_final.tex`: Main Beamer source (PDF committed)
+- `references.bib`: Bibliography used by the deck
+- `diagram_descriptions.txt`: Plain-language descriptions for the transformer and dimensionality reduction diagrams
+- `transformer_diagram.pdf/png` and `dim_reduction_diagram.pdf/tex`: Supporting visuals
+- `dimensionality_reduction.txt` and `transformer_architecture.txt`: Mermaid/flowchart sources for diagrams
+- `ProtBertSummary.txt`: Speaker notes summarizing the project and encoders
+- `data/`: Any presentation-specific exports (plots are pulled from the pipeline output)
 
-## Image References
+## Image Sources
 
-The presentation references visualization images from the following directory:
+Slide images reference the locus analysis artifacts produced by the codebase:
 ```
 data/analysis/locus_embeddings/class1/plots/
 ```
 
-These images include:
-- HLA-A, HLA-B, and HLA-C visualizations in PCA, t-SNE, and UMAP projections
+Current counts from `data/processed/hla_sequences.pkl` (Dec 2025 snapshot):
+- Total alleles: 26,000
+- Class I focus in slides: HLA-A 5,489; HLA-B 6,584; HLA-C 5,206 (17,279 combined)
 
-## How to Build the Presentation
+## Regenerating Plots
 
-To build the presentation PDF, you need a LaTeX distribution installed with the Beamer package.
-
-### Command Line
-
+Run the full pipeline to refresh embeddings and plots before re-compiling slides:
 ```bash
-# Navigate to the presentations directory
-cd presentations
-
-# Compile the presentation (first pass)
-pdflatex hla_protbert_presentation
-
-# Compile the bibliography
-bibtex hla_protbert_presentation
-
-# Compile the presentation (second pass to include citations)
-pdflatex hla_protbert_presentation
-
-# Compile once more to resolve all references
-pdflatex hla_protbert_presentation
+cd /Users/dakdemir/Library/CloudStorage/OneDrive-NMDP/Year2025/Github/hla-protbert
+source venv/bin/activate
+./run_complete_pipeline_all_encoders.sh [--disable-ssl-verify] [--ankh-backend auto|huggingface|ankh]
 ```
 
-### Using a LaTeX Editor
+Key artifacts consumed by the slides:
+- Sequence data: `data/processed/hla_sequences.pkl`
+- ProtBERT embeddings (used for locus plots): `data/embeddings/protbert/hla_embeddings.pkl`
+- Locus plots: `data/analysis/locus_embeddings/class1/plots/*.png`
 
-If you're using a LaTeX editor like TeXShop, TeXStudio, or Overleaf:
+## Build Instructions
 
-1. Open `hla_protbert_presentation.tex` in your editor
-2. Make sure the bibliography file `references.bib` is in the same directory
-3. Use the "Build and View" or equivalent option to compile the presentation
+You need a LaTeX distribution with Beamer and BibTeX.
 
-## Presentation Overview
+```bash
+cd /Users/dakdemir/Library/CloudStorage/OneDrive-NMDP/Year2025/Github/hla-protbert/presentations
 
-This presentation covers:
+pdflatex hla_protbert_presentation_final
+bibtex hla_protbert_presentation_final
+pdflatex hla_protbert_presentation_final
+pdflatex hla_protbert_presentation_final
+```
 
-1. Introduction to ProtBERT and its transformer architecture
-2. Technical details of the ProtBERT model
-3. Background on HLA (Human Leukocyte Antigens)
-4. Implementation of HLA-ProtBERT
-5. Locus embedding analysis methodology
-6. Results of HLA Class I analysis (A, B, C loci)
-7. Key findings and capabilities
-8. Future research directions
+If using a LaTeX editor (TeXShop, TeXStudio, Overleaf):
+1) Open `hla_protbert_presentation_final.tex`
+2) Ensure `references.bib` is in the same directory
+3) Build with BibTeX enabled, then re-run LaTeX to resolve citations
 
-The presentation is designed to be 8-10 slides in length, focusing on the Class I HLA analysis as requested.
+## Deck Focus
+
+- HLA complexity and motivation
+- Multi-encoder HLA-ProtBERT pipeline and caching
+- Class I locus embeddings (A, B, C) with PCA/t-SNE/UMAP views
+- Clinical, technical, and management takeaways
+- Future work and extension paths (additional encoders, ensemble use, class II analyses)

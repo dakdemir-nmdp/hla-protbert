@@ -295,33 +295,30 @@ class HLASequenceUtils:
         """Standardize HLA allele name format
         
         Args:
-            allele: HLA allele name in various formats
+            allele: HLA allele name in IMGT/HLA standard format or with HLA- prefix
             
         Returns:
             Standardized allele name (e.g., 'A*01:01')
+            
+        Note:
+            This function expects alleles in IMGT/HLA standard format (e.g., A*01:01, DRB1*03:11).
+            Ambiguous formats like 'A0101' are NOT supported as they could represent multiple
+            allele names (A*01:01 vs A*10:10:1 vs others). Always use the standard '*' and ':'
+            separators from the IMGT/HLA database.
         """
         # Remove 'HLA-' prefix if present
         if allele.startswith('HLA-'):
             allele = allele[4:]
-            
-        # Handle different separators and formats
-        if '*' not in allele:
-            # Convert formats like A0101 to A*01:01
-            match = re.match(r'([A-Z0-9]+)(\d{2,4})(?:$|:)', allele)
-            if match:
-                locus, digits = match.groups()
-                if len(digits) == 4:  # A0101 format
-                    return f"{locus}*{digits[:2]}:{digits[2:]}"
-                elif len(digits) == 2:  # A01 format
-                    return f"{locus}*{digits}"
         
-        # Handle formats with '*' but no ':'
+        # Handle formats with '*' but no ':'  (e.g., A*0101 -> A*01:01)
         if '*' in allele and ':' not in allele:
             parts = allele.split('*')
-            locus = parts[0]
-            digits = parts[1]
-            if len(digits) == 4:  # A*0101 format
-                return f"{locus}*{digits[:2]}:{digits[2:]}"
+            if len(parts) == 2:
+                locus = parts[0]
+                digits = parts[1]
+                if len(digits) == 4 and digits.isdigit():  # A*0101 format
+                    return f"{locus}*{digits[:2]}:{digits[2:]}"
         
-        # If already in correct format or unrecognized format, return as is
+        # Return as-is for standard format or unrecognized format
+        # Standard format examples: A*01:01, DRB1*03:11, B*07:02:01
         return allele

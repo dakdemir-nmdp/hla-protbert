@@ -72,17 +72,24 @@ class TestHLAEncoder:
         assert np.array_equal(embedding, embedding_2)
     
     def test_standardize_allele(self, sequence_file, cache_dir):
-        """Test allele standardization"""
+        """Test allele standardization
+        
+        Only standard IMGT/HLA formats should be parsed automatically.
+        Ambiguous formats like 'A0101' are NOT supported to prevent errors.
+        """
         encoder = MockHLAEncoder(sequence_file, cache_dir, locus='A')
         
-        # Test with HLA- prefix
+        # Test with HLA- prefix removal
         assert encoder._standardize_allele('HLA-A*01:01') == 'A*01:01'
         
-        # Test with no * separator
-        assert encoder._standardize_allele('A0101') == 'A*01:01'
+        # Test with A*0101 format (missing colon)
+        assert encoder._standardize_allele('A*0101') == 'A*01:01'
         
-        # Test with just digits
+        # Test with pure digits ONLY when locus is known (safe because context is explicit)
         assert encoder._standardize_allele('0101') == 'A*01:01'
+        
+        # Ambiguous format 'A0101' is NOT parsed (could be A*01:01 or A*10:10:1)
+        assert encoder._standardize_allele('A0101') == 'A0101'  # Returns as-is
     
     def test_batch_encode_alleles(self, sequence_file, cache_dir):
         """Test batch_encode_alleles method"""
@@ -101,3 +108,31 @@ class TestHLAEncoder:
         assert len(results_2) == 2
         assert np.array_equal(results['A*01:01'], results_2['A*01:01'])
         assert np.array_equal(results['A*02:01'], results_2['A*02:01'])
+
+    def test_verify_ssl_toggle(self, sequence_file, cache_dir, monkeypatch):
+        """Verify that SSL toggling reconfigures the HTTP backend once."""
+        import src.models.encoder as encoder_module
+
+        calls = []
+
+        def fake_configure_http_backend(backend_factory=None):
+            calls.append(backend_factory)
+
+        monkeypatch.setattr(encoder_module, "configure_http_backend", fake_configure_http_backend, raising=False)
+        monkeypatch.setattr(encoder_module, "HF_HUB_AVAILABLE", True, raising=False)
+
+        # Reset class-wide state for the test
+        encoder_module.HLAEncoder._current_ssl_verification = None
+
+        encoder = MockHLAEncoder(sequence_file, cache_dir, verify_ssl=False)
+        assert encoder.verify_ssl is False
+        assert len(calls) == 1
+        assert callable(calls[0])
+
+        encoder2 = MockHLAEncoder(sequence_file, cache_dir, verify_ssl=True)
+        assert encoder2.verify_ssl is True
+        assert len(calls) == 2
+        assert calls[1] is None  # Default backend when re-enabling
+
+        # Cleanup for next tests
+        encoder_module.HLAEncoder._current_ssl_verification = None
