@@ -123,20 +123,18 @@ class ProtBERTEncoder(HLAEncoder):
     def _load_model(self):
         """Load ProtBERT model and tokenizer"""
         logger.info(f"Loading ProtBERT model: {self.model_name}")
-        
+
         try:
             cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
             self.tokenizer = BertTokenizer.from_pretrained(
-                self.model_name, 
+                self.model_name,
                 do_lower_case=False,
                 trust_remote_code=True,
-                local_files_only=True,
                 cache_dir=cache_dir
             )
             self.model = BertModel.from_pretrained(
                 self.model_name,
                 trust_remote_code=True,
-                local_files_only=True,
                 cache_dir=cache_dir
             )
             self.model.to(self.device)
@@ -157,7 +155,7 @@ class ProtBERTEncoder(HLAEncoder):
         """
         # Extract peptide binding region if requested
         if self.use_peptide_binding_region and self.locus:
-            from ..data.sequence_utils import SequenceProcessor
+            from src.data.sequence_utils import SequenceProcessor
             processor = SequenceProcessor()
             sequence = processor.extract_peptide_binding_region(sequence, self.locus)
         

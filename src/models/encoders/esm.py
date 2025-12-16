@@ -102,8 +102,7 @@ class ESMEncoder(HLAEncoder): # Renamed class
 
             # Load tokenizer and model using AutoClasses
             # trust_remote_code=True might be needed for some ESM models if they have custom code
-            import os
-            os.environ['CURL_CA_BUNDLE'] = ''  # Disable SSL verification for macOS
+            # Note: SSL verification is configured by the base class via verify_ssl parameter
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, token=self.hf_token, trust_remote_code=True,
                                                            local_files_only=False)
             self.model = AutoModel.from_pretrained(self.model_name, token=self.hf_token, trust_remote_code=True,

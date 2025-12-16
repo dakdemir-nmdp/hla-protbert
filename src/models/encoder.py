@@ -195,7 +195,7 @@ class HLAEncoder(ABC):
         """Initialize Antigen Recognition Domain (ARD) mapper if available"""
         if PYARD_AVAILABLE:
             try:
-                self.ard = pyard.ARD()
+                self.ard = ARD()
                 logger.info("Initialized ARD mapper for allele resolution")
             except Exception as e:
                 logger.warning(f"Failed to initialize ARD: {e}")

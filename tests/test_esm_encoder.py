@@ -125,3 +125,62 @@ class TestESMEncoder:
         assert mock_batch_encode.call_count == 1  # batch_encode is called once with both sequences
         assert 'A*01:01' in results
         assert 'A*02:01' in results
+
+    def test_ssl_verification_respected(self, sequence_file, cache_dir):
+        """Test that ESM encoder respects verify_ssl flag without breaking SSL globally
+
+        This test ensures that the ESM encoder doesn't unconditionally disable SSL
+        verification by setting CURL_CA_BUNDLE='', which would be a security risk
+        and could break other HTTPS traffic in the same process.
+
+        Fixes high-priority bug: src/models/encoders/esm.py lines 106
+        """
+        import os
+
+        # Store original CURL_CA_BUNDLE if it exists
+        original_curl_ca = os.environ.get('CURL_CA_BUNDLE')
+
+        with patch('src.models.encoders.esm.AutoTokenizer') as mock_tokenizer_class, \
+             patch('src.models.encoders.esm.AutoModel') as mock_model_class:
+
+            # Setup mocks
+            mock_tokenizer = MagicMock()
+            mock_model = MagicMock()
+            mock_tokenizer_class.from_pretrained.return_value = mock_tokenizer
+            mock_model_class.from_pretrained.return_value = mock_model
+
+            # Test with verify_ssl=True (default)
+            encoder_secure = ESMEncoder(
+                sequence_file,
+                cache_dir,
+                device='cpu',
+                verify_ssl=True
+            )
+
+            # Verify CURL_CA_BUNDLE was NOT set to empty string
+            current_curl_ca = os.environ.get('CURL_CA_BUNDLE')
+            assert current_curl_ca != '', \
+                "CURL_CA_BUNDLE should not be set to empty string when verify_ssl=True"
+
+            # Reset mocks
+            mock_tokenizer_class.reset_mock()
+            mock_model_class.reset_mock()
+
+            # Test with verify_ssl=False
+            encoder_insecure = ESMEncoder(
+                sequence_file,
+                cache_dir,
+                device='cpu',
+                verify_ssl=False
+            )
+
+            # The encoder should respect the verify_ssl flag
+            # SSL verification is now handled by the base class through HF hub configuration
+            # not by unconditionally setting CURL_CA_BUNDLE
+            assert encoder_insecure.verify_ssl is False
+
+        # Cleanup: restore original CURL_CA_BUNDLE
+        if original_curl_ca is not None:
+            os.environ['CURL_CA_BUNDLE'] = original_curl_ca
+        elif 'CURL_CA_BUNDLE' in os.environ:
+            del os.environ['CURL_CA_BUNDLE']

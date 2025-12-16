@@ -10,6 +10,7 @@ import pickle
 import tempfile
 import numpy as np
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 # Add the parent directory to the path so we can import the package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -136,3 +137,83 @@ class TestHLAEncoder:
 
         # Cleanup for next tests
         encoder_module.HLAEncoder._current_ssl_verification = None
+
+    def test_ard_instantiation(self, sequence_file, cache_dir):
+        """Integration test: Verify ARD is instantiated correctly
+
+        This test ensures that when py-ard is available, ARD() is called correctly
+        (not pyard.ARD()), fixing a NameError that would occur when py-ard is installed.
+
+        Fixes high-priority bug: src/models/encoder.py line 198
+        """
+        import src.models.encoder as encoder_module
+
+        # Create a mock ARD class
+        mock_ard_instance = MagicMock()
+        mock_ard_class = MagicMock(return_value=mock_ard_instance)
+
+        # Patch at module level before initialization
+        with patch.object(encoder_module, 'PYARD_AVAILABLE', True):
+            # Also need to inject ARD into the module
+            encoder_module.ARD = mock_ard_class
+            try:
+                # Initialize encoder - this should call ARD() correctly
+                encoder = MockHLAEncoder(sequence_file, cache_dir)
+
+                # Verify ARD was instantiated (not pyard.ARD)
+                mock_ard_class.assert_called_once_with()
+                assert encoder.ard == mock_ard_instance
+            finally:
+                # Cleanup
+                if hasattr(encoder_module, 'ARD'):
+                    delattr(encoder_module, 'ARD')
+
+    def test_ard_not_available(self, sequence_file, cache_dir, monkeypatch):
+        """Test that encoder works when py-ard is not installed"""
+        import src.models.encoder as encoder_module
+
+        # Simulate py-ard not being available
+        monkeypatch.setattr(encoder_module, 'PYARD_AVAILABLE', False)
+
+        # Initialize encoder - this should not fail
+        encoder = MockHLAEncoder(sequence_file, cache_dir)
+
+        # Verify ARD is None
+        assert encoder.ard is None
+
+    def test_ard_fallback_resolution(self, sequence_file, cache_dir):
+        """Integration test: Verify ARD allele resolution fallback works correctly
+
+        This test ensures that when an allele is not found directly, the encoder
+        attempts ARD mapping if py-ard is available.
+        """
+        import src.models.encoder as encoder_module
+
+        # Mock ARD with redux_gl method
+        mock_ard = MagicMock()
+        mock_ard.redux_gl.return_value = 'A*01:01'  # Map to an existing allele
+
+        # Mock ARD class
+        mock_ard_class = MagicMock(return_value=mock_ard)
+
+        with patch.object(encoder_module, 'PYARD_AVAILABLE', True):
+            # Inject ARD into the module
+            encoder_module.ARD = mock_ard_class
+            try:
+                encoder = MockHLAEncoder(sequence_file, cache_dir)
+
+                # Try to get a sequence for an allele that doesn't match 2-field fallback
+                # but would be mapped by ARD to an existing allele
+                # Use a variant that won't match 2-field: A*99:99 (doesn't exist)
+                sequence = encoder.get_sequence('A*99:99')
+
+                # Verify ARD was called for mapping
+                # ARD should be called because direct lookup and 2-field fallback fail
+                assert sequence is not None
+                mock_ard.redux_gl.assert_called()
+                # Verify it returned the sequence for A*01:01 (the ARD mapping target)
+                assert sequence == encoder.sequences['A*01:01']
+            finally:
+                # Cleanup
+                if hasattr(encoder_module, 'ARD'):
+                    delattr(encoder_module, 'ARD')
