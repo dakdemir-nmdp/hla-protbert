@@ -1,0 +1,127 @@
+2026-01-14 08:56:01,349 - hlaprotbert.utils.logging - INFO - Logging initialized (level=20)
+2026-01-14 08:56:01,350 - __main__ - INFO - Initializing encoders...
+2026-01-14 08:56:01,350 - __main__ - INFO -   Loading ProtBERT (420M params)...
+2026-01-14 08:56:01,357 - hlaprotbert.models.encoder - INFO - Loaded 26000 sequences from data/processed/hla_sequences.pkl
+2026-01-14 08:56:01,407 - hlaprotbert.models.encoder - INFO - Loaded 26000 cached embeddings from data/embeddings/protbert/hla_embeddings.pkl
+2026-01-14 08:56:01,407 - hlaprotbert.models.encoders.protbert - INFO - Auto-detected device: cpu
+2026-01-14 08:56:01,407 - hlaprotbert.models.encoders.protbert - INFO - Loading ProtBERT model: Rostlab/prot_bert
+2026-01-14 08:56:03,754 - hlaprotbert.models.encoders.protbert - INFO - Successfully loaded model on cpu
+2026-01-14 08:56:03,754 - __main__ - INFO -     ✓ ProtBERT ready
+2026-01-14 08:56:03,754 - __main__ - INFO -   Loading ESM-2 (650M params)...
+2026-01-14 08:56:03,761 - hlaprotbert.models.encoder - INFO - Loaded 26000 sequences from data/processed/hla_sequences.pkl
+2026-01-14 08:56:03,835 - hlaprotbert.models.encoder - INFO - Loaded 26000 cached embeddings from data/embeddings/esm/hla_embeddings.pkl
+2026-01-14 08:56:03,836 - hlaprotbert.models.encoders.esm - INFO - Auto-detected device: cpu
+2026-01-14 08:56:03,836 - hlaprotbert.models.encoders.esm - INFO - Loading ESM model/tokenizer: facebook/esm2_t33_650M_UR50D onto device: cpu using Transformers
+2026-01-14 08:56:04,533 - hlaprotbert.models.encoders.esm - INFO - Successfully loaded ESM model 'facebook/esm2_t33_650M_UR50D' on cpu using Transformers
+2026-01-14 08:56:04,533 - __main__ - INFO -     ✓ ESM-2 ready
+2026-01-14 08:56:04,533 - __main__ - INFO -   Loading ProtT5 (1.3B params)...
+2026-01-14 08:56:04,537 - hlaprotbert.models.encoder - INFO - Loaded 26000 sequences from data/processed/hla_sequences.pkl
+2026-01-14 08:56:04,595 - hlaprotbert.models.encoder - INFO - Loaded 26000 cached embeddings from data/embeddings/prott5/hla_embeddings.pkl
+2026-01-14 08:56:04,596 - hlaprotbert.models.encoders.prott5 - INFO - Auto-detected device: cpu
+2026-01-14 08:56:04,596 - hlaprotbert.models.encoders.prott5 - INFO - Loading ProtT5 model/tokenizer: Rostlab/prot_t5_xl_uniref50 onto device: cpu
+2026-01-14 08:56:04,596 - hlaprotbert.models.encoders.prott5 - INFO - Loading tokenizer...
+2026-01-14 08:56:05,047 - hlaprotbert.models.encoders.prott5 - ERROR - Failed to load ProtT5 model: 
+ requires the protobuf library but it was not found in your environment. Check out the instructions on the
+installation page of its repo: https://github.com/protocolbuffers/protobuf/tree/master/python#installation and follow the ones
+that match your environment. Please note that you may need to restart your runtime after installation.
+
+2026-01-14 08:56:05,047 - __main__ - WARNING -     ✗ Failed to load ProtT5: Failed to load ProtT5 model: 
+ requires the protobuf library but it was not found in your environment. Check out the instructions on the
+installation page of its repo: https://github.com/protocolbuffers/protobuf/tree/master/python#installation and follow the ones
+that match your environment. Please note that you may need to restart your runtime after installation.
+
+2026-01-14 08:56:05,061 - __main__ - INFO -   Loading Ankh Base (50M params)...
+2026-01-14 08:56:05,062 - hlaprotbert.models.encoders.ankh - INFO - Using Ankh base: Fast inference, good accuracy
+2026-01-14 08:56:05,067 - hlaprotbert.models.encoder - INFO - Loaded 26000 sequences from data/processed/hla_sequences.pkl
+2026-01-14 08:56:05,117 - hlaprotbert.models.encoder - INFO - Loaded 26000 cached embeddings from data/embeddings/ankh/base/hla_embeddings.pkl
+2026-01-14 08:56:05,117 - hlaprotbert.models.encoders.ankh - INFO - Auto-detected device: cpu
+2026-01-14 08:56:05,117 - hlaprotbert.models.encoders.ankh - INFO - Initializing Ankh encoder (requested backend=auto, attempts=['huggingface', 'ankh'])
+2026-01-14 08:56:05,117 - hlaprotbert.models.encoders.ankh - INFO - Loading Ankh model/tokenizer from Hugging Face: ElnaggarLab/ankh-base
+2026-01-14 08:56:07,105 - hlaprotbert.models.encoders.ankh - INFO - Ankh model loaded via huggingface backend on cpu (variant=base)
+2026-01-14 08:56:07,105 - __main__ - INFO -     ✓ Ankh Base ready
+2026-01-14 08:56:07,105 - __main__ - INFO -   Loading Ankh Large (650M params)...
+2026-01-14 08:56:07,105 - hlaprotbert.models.encoders.ankh - INFO - Using Ankh large: Better accuracy, comparable to ESM-2 650M
+2026-01-14 08:56:07,110 - hlaprotbert.models.encoder - INFO - Loaded 26000 sequences from data/processed/hla_sequences.pkl
+2026-01-14 08:56:07,178 - hlaprotbert.models.encoder - INFO - Loaded 26000 cached embeddings from data/embeddings/ankh/large/hla_embeddings.pkl
+2026-01-14 08:56:07,179 - hlaprotbert.models.encoders.ankh - INFO - Auto-detected device: cpu
+2026-01-14 08:56:07,179 - hlaprotbert.models.encoders.ankh - INFO - Initializing Ankh encoder (requested backend=auto, attempts=['huggingface', 'ankh'])
+2026-01-14 08:56:07,179 - hlaprotbert.models.encoders.ankh - INFO - Loading Ankh model/tokenizer from Hugging Face: ElnaggarLab/ankh-large
+2026-01-14 08:56:10,864 - hlaprotbert.models.encoders.ankh - INFO - Ankh model loaded via huggingface backend on cpu (variant=large)
+2026-01-14 08:56:10,864 - __main__ - INFO -     ✓ Ankh Large ready
+2026-01-14 08:56:10,864 - __main__ - INFO - Successfully initialized 4/5 encoders
+
+================================================================================
+ENCODING ALLELES
+================================================================================
+
+Encoding: A*01:01
+--------------------------------------------------------------------------------
+  protbert    : shape=(1024,) time=0.001s
+  esm         : shape=(1280,) time=0.000s
+  ankh_base   : shape=(768,) time=0.000s
+  ankh_large  : shape=(1536,) time=0.000s
+
+Encoding: A*02:01
+--------------------------------------------------------------------------------
+  protbert    : shape=(1024,) time=0.000s
+  esm         : shape=(1280,) time=0.000s
+  ankh_base   : shape=(768,) time=0.000s
+  ankh_large  : shape=(1536,) time=0.000s
+
+Encoding: B*07:02
+--------------------------------------------------------------------------------
+  protbert    : shape=(1024,) time=0.000s
+  esm         : shape=(1280,) time=0.000s
+  ankh_base   : shape=(768,) time=0.000s
+  ankh_large  : shape=(1536,) time=0.000s
+
+================================================================================
+INTER-ALLELE SIMILARITY
+================================================================================
+
+Comparing A*01:01 vs A*02:01:
+--------------------------------------------------------------------------------
+  protbert    : 0.9993
+  esm         : 0.9989
+  ankh_base   : 0.9990
+  ankh_large  : 0.9977
+
+Comparing A*01:01 vs B*07:02:
+--------------------------------------------------------------------------------
+  protbert    : 0.9753
+  esm         : 0.9977
+  ankh_base   : 0.9981
+  ankh_large  : 0.9964
+
+Comparing A*02:01 vs B*07:02:
+--------------------------------------------------------------------------------
+  protbert    : 0.9720
+  esm         : 0.9982
+  ankh_base   : 0.9977
+  ankh_large  : 0.9943
+
+================================================================================
+PERFORMANCE BENCHMARK
+================================================================================
+
+Benchmarking with allele: A*01:01
+Iterations: 5
+--------------------------------------------------------------------------------
+  protbert    : 0.000s ± 0.000s
+  esm         : 0.000s ± 0.000s
+  ankh_base   : 0.000s ± 0.000s
+  ankh_large  : 0.000s ± 0.000s
+
+================================================================================
+SUMMARY
+================================================================================
+
+Successfully encoded 3 allele(s)
+Using 4 encoder(s): protbert, esm, ankh_base, ankh_large
+
+Model Specifications:
+  ProtBERT:    420M params, 768-dim embeddings
+  ESM-2:       650M params, 1280-dim embeddings
+  ProtT5:      1.3B params, 1024-dim embeddings
+  Ankh Base:   50M params, 768-dim embeddings
+  Ankh Large:  650M params, 1536-dim embeddings

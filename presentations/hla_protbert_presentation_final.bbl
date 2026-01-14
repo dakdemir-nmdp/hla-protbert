@@ -1,3 +1,55 @@
 \begin{thebibliography}{}
 
+\bibitem[Devlin et~al., 2019]{Devlin2019}
+Devlin, J., Chang, M.-W., Lee, K., and Toutanova, K. (2019).
+\newblock Bert: Pre-training of deep bidirectional transformers for language
+  understanding.
+\newblock {\em Proceedings of the 2019 Conference of the North American Chapter
+  of the Association for Computational Linguistics: Human Language
+  Technologies}, pages 4171--4186.
+
+\bibitem[Elnaggar et~al., 2021]{Elnaggar2021}
+Elnaggar, A., Heinzinger, M., Dallago, C., Rehawi, G., Wang, Y., Jones, L.,
+  Gibbs, T., Feher, T., Angerer, C., Steinegger, M., Bhowmik, D., and Rost, B.
+  (2021).
+\newblock Prottrans: Towards cracking the language of life's code through
+  self-supervised deep learning and high performance computing.
+\newblock {\em IEEE Transactions on Pattern Analysis and Machine Intelligence}.
+
+\bibitem[Jolliffe and Cadima, 2016]{Jolliffe2016}
+Jolliffe, I.~T. and Cadima, J. (2016).
+\newblock {\em Principal Component Analysis}.
+\newblock Springer, 2nd edition.
+
+\bibitem[Marsh et~al., 2010]{Marsh2010}
+Marsh, S.~G., Albert, E., Bodmer, W., Bontrop, R., Dupont, B., Erlich, H.,
+  Fernández-Viña, M., Geraghty, D., Holdsworth, R., Hurley, C., et~al.
+  (2010).
+\newblock Nomenclature for factors of the hla system, 2010.
+\newblock {\em Tissue antigens}, 75(4):291--455.
+
+\bibitem[McInnes et~al., 2018]{McInnes2018}
+McInnes, L., Healy, J., and Melville, J. (2018).
+\newblock Umap: Uniform manifold approximation and projection for dimension
+  reduction.
+\newblock {\em arXiv preprint arXiv:1802.03426}.
+
+\bibitem[Robinson et~al., 2015]{Robinson2015}
+Robinson, J., Halliwell, J.~A., Hayhurst, J.~D., Flicek, P., Parham, P., and
+  Marsh, S.~G. (2015).
+\newblock The ipd and imgt/hla database: allele variant databases.
+\newblock {\em Nucleic acids research}, 43(D1):D423--D431.
+
+\bibitem[Suthram et~al., 2023]{Suthram2023}
+Suthram, S., Zhang, M., Lee, S., and Zheng, N. (2023).
+\newblock Machine learning applications in hla matching for solid organ and
+  stem cell transplantation.
+\newblock {\em Clinical Journal of the American Society of Nephrology},
+  18(4):481--492.
+
+\bibitem[van~der Maaten and Hinton, 2008]{Maaten2008}
+van~der Maaten, L. and Hinton, G. (2008).
+\newblock Visualizing data using t-sne.
+\newblock {\em Journal of Machine Learning Research}, 9:2579--2605.
+
 \end{thebibliography}

@@ -1,0 +1,31 @@
+2026-01-14 08:56:03,268 - hlaprotbert.utils.logging - INFO - Logging initialized (level=INFO)
+2026-01-14 08:56:03,269 - root - INFO - Initializing PROTBERT encoder...
+2026-01-14 08:56:03,275 - hlaprotbert.models.encoder - INFO - Loaded 26000 sequences from /Users/dakdemir/Library/CloudStorage/OneDrive-NMDP/Year2025/Github/hla-protbert/data/processed/hla_sequences.pkl
+2026-01-14 08:56:03,338 - hlaprotbert.models.encoder - INFO - Loaded 26000 cached embeddings from data/embeddings/protbert/hla_embeddings.pkl
+2026-01-14 08:56:03,338 - hlaprotbert.models.encoders.protbert - INFO - Auto-detected device: cpu
+2026-01-14 08:56:03,338 - hlaprotbert.models.encoders.protbert - INFO - Loading ProtBERT model: Rostlab/prot_bert
+2026-01-14 08:56:05,415 - hlaprotbert.models.encoders.protbert - INFO - Successfully loaded model on cpu
+2026-01-14 08:56:05,416 - root - INFO - Performing matching analysis...
+
+===== HLA Matching Analysis =====
+
+Using PROTBERT model: Rostlab/prot_bert
+Pooling strategy: mean
+Using peptide binding region: True
+Device: cpu
+Donor HLA: A*01:01, A*02:01, B*07:02, B*08:01
+Recipient HLA: A*01:01, A*03:01, B*07:02, B*08:01
+
+Common Loci: A, B
+Exact Matches: 3 (75.0%)
+Functional Matches: 1 (additional 25.0%)
+Total Match: 100.0%
+Average Similarity: 0.999
+
+Exact Matches:
+  A*01:01
+  B*07:02
+  B*08:01
+
+Functional Matches (high similarity but not exact):
+  A*03:01 ~ A*02:01 (similarity: 0.997)

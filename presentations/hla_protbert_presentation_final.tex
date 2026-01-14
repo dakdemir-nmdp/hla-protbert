@@ -54,11 +54,12 @@
 
 % Title information
 \title[HLA-ProtBERT]{HLA-ProtBERT: Multi-Encoder HLA Analysis}
-\author{NMDP Research Team}
-\institute{National Marrow Donor Program}
+\author{Deniz Akdemir}
+\institute{NMDP}
 \date{December 2025}
 
 \begin{document}
+\nocite{*}
 
 % Title slide
 \begin{frame}
@@ -165,15 +166,20 @@
 \end{frame}
 
 \begin{frame}{How It Works}
-  \begin{center}
-    \includegraphics[width=0.60\textwidth]{transformer_diagram.pdf}
-  \end{center}
-
-  \begin{itemize}\small
-    \item Processes HLA sequence while considering all amino acid relationships
-    \item Multiple layers extract increasingly complex patterns
-    \item Output: mathematical vector capturing protein properties
-  \end{itemize}
+  \begin{columns}
+    \begin{column}{0.7\textwidth}
+      \centering
+      \includegraphics[width=0.85\textheight, angle=90]{transformer_diagram.pdf}
+    \end{column}
+    \begin{column}{0.3\textwidth}
+      \small
+      \begin{itemize}
+        \item Processes HLA sequence considering all amino acid relationships
+        \item Multiple layers extract complex patterns
+        \item Output: vector capturing protein properties
+      \end{itemize}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{From Complex to Simple}
@@ -193,6 +199,170 @@
     \begin{column}{0.33\textwidth}\centering\small
       \textbf{UMAP}\\
       Balanced view
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{The Model Zoo}
+
+\begin{frame}{Encoder 1: ProtBERT}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item \textbf{Source:} RostLab (2020)
+        \item \textbf{Architecture:} BERT-Large (Transformers)
+        \item \textbf{Scale:} 420 Million parameters, 30 layers
+        \item \textbf{Training Data:} UniRef100 (216M protein sequences)
+        \item \textbf{Output:} 1024-dimensional embeddings (per residue)
+      \end{itemize}
+      \vspace{0.5cm}
+      \textit{"The 'Swiss Army Knife' of protein language models - trained on the entire known protein universe."}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{tcolorbox}[colback=blue!5,colframe=blue!40,title=Why we use it]
+      Excellent distinctiveness between HLA loci. Shows strong correlation with peptide binding properties.
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Encoder 2: ESM-2}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item \textbf{Source:} Meta AI (Facebook Research)
+        \item \textbf{Architecture:} Modern Transformer with Rotary Embeddings (RoPE)
+        \item \textbf{Scale:} 650 Million parameters (in our pipeline)
+        \item \textbf{Training Data:} UniRef50 (Evolutionary balanced)
+        \item \textbf{Output:} 1280-dimensional embeddings
+      \end{itemize}
+      \vspace{0.5cm}
+      \textit{"Evolutionary Scale Modeling - predicts structure directly from sequence."}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{tcolorbox}[colback=green!5,colframe=green!40,title=Why we use it]
+      Captures subtle evolutionary relationships. The high dimensional output provides rich structural context.
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Encoder 3: Ankh}
+  \begin{columns}
+    \begin{column}{0.6\textwidth}
+      \begin{itemize}
+        \item \textbf{Source:} Elnaggar/RostLab (2023)
+        \item \textbf{Architecture:} Protein-Specific Transformer
+        \item \textbf{Scale:} 50M (Base) to 650M (Large) parameters
+        \item \textbf{Training Data:} UniRef50
+        \item \textbf{Output:} 768 or 1536-dimensional embeddings
+      \end{itemize}
+      \vspace{0.5cm}
+      \textit{"Optimized specifically for the language of proteins, not just adapted from text."}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \begin{tcolorbox}[colback=orange!5,colframe=orange!40,title=Why we use it]
+      Highly efficient inference. The "Large" model rivals ESM-2 in performance while being faster for production matching.
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\section{Live Demonstration}
+
+\begin{frame}{Vignette: The "Mismatch" That Wasn't}
+  \footnotesize
+  \textbf{Scenario:} A patient needs a transplant. We find a donor with a single mismatch on the HLA-A locus.
+  
+  \vspace{0.05cm}
+  
+  \begin{columns}
+    \begin{column}{0.45\textwidth}
+      \begin{tcolorbox}[colback=red!5,colframe=red!50,title=Standard Analysis]
+      \textbf{Donor:} A*02:01 \\
+      \textbf{Patient:} \textbf{A*03:01} \\
+      \vspace{0.05cm}
+      \textbf{Verdict:} \textcolor{red}{\textbf{MISMATCH}} \\
+      (Different serological groups)
+      \end{tcolorbox}
+    \end{column}
+    \begin{column}{0.1\textwidth}
+      \centering
+      \Huge $\rightarrow$
+    \end{column}
+    \begin{column}{0.45\textwidth}
+      \begin{tcolorbox}[colback=green!5,colframe=green!50,title=AI Analysis (ProtBERT)]
+      \textbf{Similarity Score:} \textbf{0.997} (High) \\
+      \vspace{0.05cm}
+      \textbf{Verdict:} \textcolor{managementcolor}{\textbf{Functional Match}} \\
+      \scriptsize
+      Physicochemical profile of the peptide binding groove is 99.7\% identical.
+      \end{tcolorbox}
+    \end{column}
+  \end{columns}
+  
+  \vspace{-0.2cm} % Negative space to counteract the built-in vspace of keytakeaway
+  \keytakeaway{The AI sees beyond the label: A*02 and A*03 share significant functional properties.}
+\end{frame}
+
+\begin{frame}{Case Study: Donor-Recipient Analysis}
+  \begin{columns}
+    \begin{column}{0.4\textwidth}
+      \begin{tcolorbox}[colback=blue!5,colframe=blue!40,title=Match Report]
+      \textbf{Overall Score:} \Large \textbf{0.9664}
+      \end{tcolorbox}
+      \vspace{0.2cm}
+      \scriptsize \textit{High functional compatibility despite allelic differences.}
+    \end{column}
+    \begin{column}{0.6\textwidth}
+      \textbf{Locus-Level Insights:}
+      \begin{itemize}\small
+        \item \textbf{HLA-A:} \textcolor{green!60!black}{High Similarity}
+          \begin{itemize}\scriptsize
+            \item A*01:01 vs A*24:02 $\rightarrow$ 0.9966
+            \item A*02:01 vs A*01:01 $\rightarrow$ 0.9954
+          \end{itemize}
+        \item \textbf{HLA-B:} \textcolor{green!60!black}{Excellent Match}
+          \begin{itemize}\scriptsize
+            \item B*07:02 vs B*15:01 $\rightarrow$ 0.9981
+          \end{itemize}
+        \item \textbf{HLA-C:} \textcolor{red!80!black}{Functional Divergence}
+          \begin{itemize}\scriptsize
+            \item \textbf{C*07:01 vs C*03:04 $\rightarrow$ 0.8010}
+          \end{itemize}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  
+  \keytakeaway{The model flags the C-locus mismatch (0.80) as a potential risk factor hidden by the high overall score.}
+\end{frame}
+
+\begin{frame}{Deep Dive: Similarity Search}
+  \textbf{Query:} Find neighbors for \texttt{A*01:01}
+  
+  \vspace{0.3cm}
+  
+  \begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{1. Exact/Synonymous Matches} (Sim = 1.0)
+      \begin{itemize}\scriptsize
+        \item A*01:01:01:01
+        \item A*01:395
+        \item A*01:251
+      \end{itemize}
+      \vspace{0.2cm}
+      \textit{Validates model precision on known variants.}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{2. Functional Cross-Locus Links}
+      \begin{itemize}\scriptsize
+        \item \textbf{A*01:01 vs B*07:02} $\rightarrow$ \textbf{0.9857} \\
+        \textit{"Very similar protein group"}
+        \item \textbf{A*01:01 vs C*07:01} $\rightarrow$ \textbf{0.7745} \\
+        \textit{"Substantially different"}
+      \end{itemize}
+      \vspace{0.2cm}
+      \textit{Quantifies biological distance beyond nomenclature.}
     \end{column}
   \end{columns}
 \end{frame}
@@ -339,7 +509,7 @@
   \end{columns}
 \end{frame}
 
-\begin{frame}{Key Takeaways}
+\begin{frame}[shrink=5]{Key Takeaways}
   \begin{tcolorbox}[colback=white,colframe=hlablue!75!black]
   \begin{enumerate}\small
     \item Multi-encoder embeddings reveal functional HLA relationships
