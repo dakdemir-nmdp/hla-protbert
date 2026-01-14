@@ -15,10 +15,10 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.data.imgt_downloader import IMGTDownloader
-from src.data.imgt_parser import IMGTParser
-from src.utils.logging import setup_logging
-from src.utils.config import ConfigManager
+from hlaprotbert.data.imgt_downloader import IMGTDownloader
+from hlaprotbert.data.imgt_parser import IMGTParser
+from hlaprotbert.utils.logging import setup_logging
+from hlaprotbert.utils.config import ConfigManager
 
 def main():
     """Main function to update IMGT/HLA database"""

@@ -6,7 +6,7 @@ protein language models (ProtBERT, ESM) and analyzing HLA matching for
 transplantation immunogenomics.
 """
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 __author__ = "Deniz Akdemir"
 __email__ = "dakdemir@nmdp.org"
 

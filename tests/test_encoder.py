@@ -15,7 +15,7 @@ from unittest.mock import MagicMock, patch
 # Add the parent directory to the path so we can import the package
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.models.encoder import HLAEncoder
+from hlaprotbert.models.encoder import HLAEncoder
 
 # Create a concrete implementation of HLAEncoder for testing
 class MockHLAEncoder(HLAEncoder):
@@ -112,7 +112,7 @@ class TestHLAEncoder:
 
     def test_verify_ssl_toggle(self, sequence_file, cache_dir, monkeypatch):
         """Verify that SSL toggling reconfigures the HTTP backend once."""
-        import src.models.encoder as encoder_module
+        import hlaprotbert.models.encoder as encoder_module
 
         calls = []
 
@@ -146,7 +146,7 @@ class TestHLAEncoder:
 
         Fixes high-priority bug: src/models/encoder.py line 198
         """
-        import src.models.encoder as encoder_module
+        import hlaprotbert.models.encoder as encoder_module
 
         # Create a mock ARD class
         mock_ard_instance = MagicMock()
@@ -170,7 +170,7 @@ class TestHLAEncoder:
 
     def test_ard_not_available(self, sequence_file, cache_dir, monkeypatch):
         """Test that encoder works when py-ard is not installed"""
-        import src.models.encoder as encoder_module
+        import hlaprotbert.models.encoder as encoder_module
 
         # Simulate py-ard not being available
         monkeypatch.setattr(encoder_module, 'PYARD_AVAILABLE', False)
@@ -187,7 +187,7 @@ class TestHLAEncoder:
         This test ensures that when an allele is not found directly, the encoder
         attempts ARD mapping if py-ard is available.
         """
-        import src.models.encoder as encoder_module
+        import hlaprotbert.models.encoder as encoder_module
 
         # Mock ARD with redux_gl method
         mock_ard = MagicMock()

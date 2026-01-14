@@ -74,7 +74,7 @@ Results are saved to `benchmarks/results.json` with full details including:
 
 ```bash
 # Ensure HLA sequences are downloaded
-python scripts/update_imgt.py
+python -m hlaprotbert.scripts.update_imgt
 
 # Install all required models will happen automatically on first run
 # (Models will be downloaded to HuggingFace cache, ~15GB total)
@@ -241,7 +241,7 @@ python benchmarks/benchmark_encoders.py --device cpu
 ### "Sequence file not found"
 ```bash
 # Download HLA sequences first
-python scripts/update_imgt.py
+python -m hlaprotbert.scripts.update_imgt
 ```
 
 ### Model download issues

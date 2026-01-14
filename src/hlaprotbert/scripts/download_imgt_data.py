@@ -3,7 +3,7 @@
 This script downloads HLA sequence data from the IMGT/HLA database.
 
 Dependencies:
-  - Project-specific src.data.imgt_downloader
+  - Project-specific hlaprotbert.data.imgt_downloader
 
 Usage:
   python scripts/download_imgt_data.py --data-dir data/raw
@@ -21,8 +21,8 @@ project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
 # Import project modules
-from src.data.imgt_downloader import IMGTDownloader
-from src.utils.logging import setup_logging
+from hlaprotbert.data.imgt_downloader import IMGTDownloader
+from hlaprotbert.utils.logging import setup_logging
 
 def main():
     parser = argparse.ArgumentParser(description="Download HLA sequences from IMGT/HLA database.")

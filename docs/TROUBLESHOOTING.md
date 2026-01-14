@@ -76,7 +76,7 @@ Error downloading from FTP: Connection timed out
 **Solutions:**
 1. Use GitHub fallback:
    ```python
-   from src.data.imgt_downloader import IMGTDownloader
+   from hlaprotbert.data.imgt_downloader import IMGTDownloader
    
    downloader = IMGTDownloader(use_github_first=True)
    downloader.download_latest()
@@ -301,7 +301,7 @@ ValueError: No sequence found for allele B*57:01:01:02
 
 3. Update IMGT database:
    ```python
-   from src.data.imgt_downloader import IMGTDownloader
+   from hlaprotbert.data.imgt_downloader import IMGTDownloader
    
    downloader = IMGTDownloader()
    downloader.download_latest(force=True)
@@ -357,7 +357,7 @@ ValueError: No sequence found for allele B*57:01:01:02
 
 4. Use ESM instead of ProtBERT (faster inference):
    ```python
-   from src.models.encoders.esm import ESMEncoder
+   from hlaprotbert.models.encoders.esm import ESMEncoder
    
    encoder = ESMEncoder(
        sequence_file="data/sequences.pkl",

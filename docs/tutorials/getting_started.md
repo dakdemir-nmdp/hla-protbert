@@ -20,8 +20,8 @@ import seaborn as sns
 from pathlib import Path
 
 # Import HLA-ProtBERT modules
-from src.models.protbert import ProtBERTEncoder
-from src.utils.logging import setup_logging
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, AnkhEncoder
+from hlaprotbert.utils.logging import setup_logging
 
 # Set up logging
 logger = setup_logging(level="INFO")
@@ -31,18 +31,28 @@ data_dir = Path("./data")
 sequence_file = data_dir / "processed" / "hla_sequences.pkl"
 embeddings_dir = data_dir / "embeddings"
 
-# Initialize encoder
+# Initialize encoder (Choose one)
+# Option 1: ProtBERT (Standard)
 encoder = ProtBERTEncoder(
     sequence_file=sequence_file,
-    cache_dir=embeddings_dir,
+    cache_dir=embeddings_dir / "protbert",
     pooling_strategy="mean",
     use_peptide_binding_region=True
 )
 
-print(f"ProtBERT model: {encoder.model_name}")
+# Option 2: Ankh (Faster, Modern)
+# encoder = AnkhEncoder(
+#     sequence_file=sequence_file,
+#     cache_dir=embeddings_dir / "ankh",
+#     model_variant="base" 
+# )
+
+print(f"Model: {encoder.model_name}")
 print(f"Pooling strategy: {encoder.pooling_strategy}")
-print(f"Using peptide binding region: {encoder.use_peptide_binding_region}")
+if hasattr(encoder, "use_peptide_binding_region"):
+    print(f"Using peptide binding region: {encoder.use_peptide_binding_region}")
 print(f"Device: {encoder.device}")
+
 ```
 
 ## Exploring Available HLA Alleles

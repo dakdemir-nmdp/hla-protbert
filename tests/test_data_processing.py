@@ -7,8 +7,8 @@ import tempfile
 import pickle
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from src.data.imgt_downloader import IMGTDownloader
-from src.data.imgt_parser import IMGTParser
+from hlaprotbert.data.imgt_downloader import IMGTDownloader
+from hlaprotbert.data.imgt_parser import IMGTParser
 
 
 class TestIMGTDownloader:
@@ -63,7 +63,7 @@ class TestIMGTDownloader:
         version = self.downloader._get_current_version()
         assert version == "3.49.0"
     
-    @patch('src.data.imgt_downloader.requests.get')
+    @patch('hlaprotbert.data.imgt_downloader.requests.get')
     def test_get_latest_version_github(self, mock_get):
         """Test getting latest version from GitHub."""
         mock_response = Mock()
@@ -74,8 +74,8 @@ class TestIMGTDownloader:
         version = self.downloader._get_latest_version()
         assert version == 'v3.50.0'
     
-    @patch('src.data.imgt_downloader.ftplib.FTP')
-    @patch('src.data.imgt_downloader.requests.get')
+    @patch('hlaprotbert.data.imgt_downloader.ftplib.FTP')
+    @patch('hlaprotbert.data.imgt_downloader.requests.get')
     def test_download_latest_runtime_error(self, mock_get, mock_ftp):
         """Test download_latest raises RuntimeError when all sources fail."""
         mock_get.side_effect = Exception("Network error")
@@ -166,7 +166,7 @@ class TestIMGTParserFallbackParser:
         self.imgt_dir.mkdir(parents=True)
         
         # Mock BioPython as unavailable
-        import src.data.imgt_parser as parser_module
+        import hlaprotbert.data.imgt_parser as parser_module
         self.original_seqio = parser_module.SeqIO
         parser_module.SeqIO = None
         
@@ -177,7 +177,7 @@ class TestIMGTParserFallbackParser:
     
     def teardown_method(self):
         """Restore BioPython."""
-        import src.data.imgt_parser as parser_module
+        import hlaprotbert.data.imgt_parser as parser_module
         parser_module.SeqIO = self.original_seqio
     
     def test_fallback_parser_used(self):

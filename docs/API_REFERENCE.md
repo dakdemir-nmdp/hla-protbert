@@ -25,7 +25,7 @@ Complete API documentation for HLA-ProtBERT.
 Abstract base class for all HLA encoders.
 
 ```python
-from src.models.encoder import HLAEncoder
+from hlaprotbert.models.encoder import HLAEncoder
 ```
 
 #### Constructor
@@ -77,7 +77,7 @@ encoder.get_embedding(
 **Example:**
 ```python
 embedding = encoder.get_embedding("A*01:01")
-print(embedding.shape)  # (768,) for ProtBERT
+print(embedding.shape)  # (1024,) for ProtBERT
 ```
 
 ##### batch_encode_alleles()
@@ -149,7 +149,7 @@ for allele, score in similar:
 ProtBERT-based encoder for HLA alleles.
 
 ```python
-from src.models.encoders.protbert import ProtBERTEncoder
+from hlaprotbert.models.encoders.protbert import ProtBERTEncoder
 ```
 
 #### Constructor
@@ -187,7 +187,7 @@ encoder = ProtBERTEncoder(
 
 # Encode single allele
 embedding = encoder.get_embedding("A*01:01")
-print(embedding.shape)  # (768,)
+print(embedding.shape)  # (1024,)
 
 # Batch encoding
 alleles = ["A*01:01", "A*02:01", "B*07:02"]
@@ -201,7 +201,7 @@ embeddings = encoder.batch_encode_alleles(alleles, batch_size=16)
 ESM-2 based encoder for HLA alleles.
 
 ```python
-from src.models.encoders.esm import ESMEncoder
+from hlaprotbert.models.encoders.esm import ESMEncoder
 ```
 
 #### Constructor
@@ -250,7 +250,7 @@ print(embedding.shape)  # (1280,)
 Downloads and manages IMGT/HLA database files.
 
 ```python
-from src.data.imgt_downloader import IMGTDownloader
+from hlaprotbert.data.imgt_downloader import IMGTDownloader
 ```
 
 #### Constructor
@@ -305,7 +305,7 @@ downloader.download_latest()
 Parses IMGT/HLA FASTA files into structured sequences.
 
 ```python
-from src.data.imgt_parser import IMGTParser
+from hlaprotbert.data.imgt_parser import IMGTParser
 ```
 
 #### Constructor
@@ -360,7 +360,7 @@ print(f"Parsed {len(sequences)} sequences")
 Analyzes HLA matching between donors and recipients.
 
 ```python
-from src.analysis.matching import MatchingAnalyzer
+from hlaprotbert.analysis.matching import MatchingAnalyzer
 ```
 
 #### Constructor
@@ -386,7 +386,7 @@ MatchingAnalyzer(
 
 **Example:**
 ```python
-from src.models.encoders.protbert import ProtBERTEncoder
+from hlaprotbert.models.encoders.protbert import ProtBERTEncoder
 
 encoder = ProtBERTEncoder("data/processed/hla_sequences.pkl")
 analyzer = MatchingAnalyzer(
@@ -405,7 +405,7 @@ analyzer = MatchingAnalyzer(
 Manages application configuration with environment variable overrides.
 
 ```python
-from src.utils.config import ConfigManager
+from hlaprotbert.utils.config import ConfigManager
 ```
 
 #### Constructor

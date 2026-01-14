@@ -1,19 +1,19 @@
 # HLA-ProtBERT: Protein Language Model Encoding for HLA Alleles
 
+[![PyPI version](https://badge.fury.io/py/hlaprotbert.svg)](https://pypi.org/project/hlaprotbert/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-A production-ready framework for encoding HLA alleles using state-of-the-art protein language models (ProtBERT, ESM). This tool provides researchers with high-dimensional protein embeddings for HLA alleles, enabling advanced analysis in immunogenetics, transplantation matching, and immunotherapy research.
+A production-ready framework for encoding HLA alleles using state-of-the-art protein language models (ProtBERT, ESM, ProtT5, Ankh). This tool provides researchers with high-dimensional protein embeddings for HLA alleles, enabling advanced analysis in immunogenetics, transplantation matching, and immunotherapy research.
 
-**Status**: Beta - Actively maintained and production-ready for research use.
+**Status**: v1.0.0 - Production Ready
 
-## Features
 ## ✨ Key Features
 
 - 🧬 **Automated IMGT/HLA Database Management**: Seamless downloading and updating of the latest HLA sequence data with version tracking
 - 🤖 **Multiple State-of-the-Art Encoders**: 
-  - **ProtBERT** (BERT-based, 420M params, 768-dim embeddings) - Proven performance
+  - **ProtBERT** (BERT-based, 420M params, 1024-dim embeddings) - Proven performance
   - **ESM-2** (RoBERTa-based, 650M params, 1280-dim embeddings) - State-of-the-art accuracy
   - **ProtT5** (T5-based, 1.3B params, 1024-dim embeddings) - Complementary architecture
   - **Ankh** (Purpose-built, 50M/650M params, 768/1536-dim embeddings) - Efficient inference
@@ -41,13 +41,37 @@ A production-ready framework for encoding HLA alleles using state-of-the-art pro
 
 ## Installation
 
-### Quick Installation (Recommended)
+### Via pip (Recommended)
 
-For users who want to get started immediately:
+The easiest way to install HLA-ProtBERT:
+
+```bash
+pip install hlaprotbert
+```
+
+For additional features:
+
+```bash
+# With development tools
+pip install hlaprotbert[dev]
+
+# With analysis tools (UMAP, reporting)
+pip install hlaprotbert[analysis]
+
+# With HLA nomenclature support (py-ard)
+pip install hlaprotbert[nomenclature]
+
+# Install all extras
+pip install hlaprotbert[all]
+```
+
+### From Source (For Development)
+
+For contributors or those who want the latest features:
 
 ```bash
 # 1. Clone and navigate to repository
-git clone https://github.com/yourusername/hla-protbert.git
+git clone https://github.com/dakdemir-nmdp/hla-protbert.git
 cd hla-protbert
 
 # 2. Create and activate virtual environment
@@ -55,21 +79,14 @@ python3 -m venv venv
 source venv/bin/activate  # On macOS/Linux
 # OR: venv\Scripts\activate  # On Windows
 
-# 3. Run automated setup (installs dependencies, downloads models, verifies installation)
+# 3. Install in development mode
+pip install -e ".[dev]"
+
+# 4. (Optional) Run automated setup for full pipeline
 ./setup_and_verify.sh
-
-# 4. Run complete pipeline for all encoders
-./run_complete_pipeline_all_encoders.sh
-
-# Behind a restrictive corporate proxy? Combine the SSL bypass and native
-# Ankh backend to avoid direct Hugging Face downloads:
-./run_complete_pipeline_all_encoders.sh \
-    --disable-ssl-verify \
-    --ankh-backend ankh
 ```
 
-**Total time**: ~30-60 minutes (mostly model downloads)  
-**Disk space**: ~15GB  
+**Disk space**: ~15GB (for all models)  
 **For detailed instructions**: See [`docs/INSTALLATION_GUIDE.md`](docs/INSTALLATION_GUIDE.md)
 
 ### Manual Installation
@@ -154,7 +171,7 @@ First, download the latest HLA sequences from the IMGT/HLA database:
 
 ```bash
 # Download and process IMGT/HLA database
-python scripts/update_imgt.py --verbose
+python -m hlaprotbert.scripts.update_imgt --verbose
 
 # This will:
 # - Download the latest HLA protein sequences
@@ -168,19 +185,19 @@ Generate protein embeddings for HLA alleles:
 
 ```bash
 # Generate ProtBERT embeddings for all alleles
-python scripts/generate_embeddings.py --encoder-type protbert --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --verbose
 
 # Generate embeddings for specific locus only
-python scripts/generate_embeddings.py --encoder-type protbert --locus A --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --locus A --all
 
 # Generate ESM embeddings
-python scripts/generate_embeddings.py --encoder-type esm --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type esm --all --verbose
 ```
 
 ### 3. Basic Python Usage
 
 ```python
-from src.models.encoders import ProtBERTEncoder, ESMEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder
 
 # Initialize ProtBERT encoder
 encoder = ProtBERTEncoder(
@@ -218,7 +235,7 @@ HLA-ProtBERT provides four state-of-the-art protein language models, each with d
 | Model | Architecture | Parameters | Embedding Dim | Speed | Memory | Best For |
 |-------|-------------|------------|---------------|-------|---------|----------|
 | **Ankh Base** | Custom | 50M | 768 | ⚡⚡⚡⚡ | 🟢 Low | Production, fast inference |
-| **ProtBERT** | BERT | 420M | 768 | ⚡⚡⚡ | 🟡 Medium | General purpose, proven |
+| **ProtBERT** | BERT | 420M | 1024 | ⚡⚡⚡ | 🟡 Medium | General purpose, proven |
 | **ESM-2** | RoBERTa | 650M | 1280 | ⚡⚡ | 🟡 Medium | High accuracy, research |
 | **Ankh Large** | Custom | 650M | 1536 | ⚡⚡ | 🟡 Medium | Balanced speed/accuracy |
 | **ProtT5** | T5 | 1.3B | 1024 | ⚡ | 🔴 High | Complementary features |
@@ -227,7 +244,7 @@ HLA-ProtBERT provides four state-of-the-art protein language models, each with d
 
 #### 🚀 Ankh Base (Recommended for Production)
 ```python
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 
 encoder = AnkhEncoder(
     sequence_file="./data/processed/hla_sequences.pkl",
@@ -242,7 +259,7 @@ encoder = AnkhEncoder(
 
 #### 🎯 ProtBERT (Recommended for General Research)
 ```python
-from src.models.encoders import ProtBERTEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder
 
 encoder = ProtBERTEncoder(
     sequence_file="./data/processed/hla_sequences.pkl",
@@ -257,7 +274,7 @@ encoder = ProtBERTEncoder(
 
 #### 🔬 ESM-2 (Recommended for High-Accuracy Research)
 ```python
-from src.models.encoders import ESMEncoder
+from hlaprotbert.models.encoders import ESMEncoder
 
 encoder = ESMEncoder(
     sequence_file="./data/processed/hla_sequences.pkl",
@@ -272,7 +289,7 @@ encoder = ESMEncoder(
 
 #### 🧬 Ankh Large (Best Speed/Accuracy Balance)
 ```python
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 
 encoder = AnkhEncoder(
     sequence_file="./data/processed/hla_sequences.pkl",
@@ -287,7 +304,7 @@ encoder = AnkhEncoder(
 
 #### 🎨 ProtT5 (Complementary Architecture)
 ```python
-from src.models.encoders import ProtT5Encoder
+from hlaprotbert.models.encoders import ProtT5Encoder
 
 encoder = ProtT5Encoder(
     sequence_file="./data/processed/hla_sequences.pkl",
@@ -305,7 +322,7 @@ encoder = ProtT5Encoder(
 Combine multiple models for robust predictions:
 
 ```python
-from src.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
 import numpy as np
 
 # Initialize multiple encoders
@@ -394,17 +411,17 @@ mkdir -p data/{raw,processed,embeddings/{protbert,esm}}
 mkdir -p data/analysis/locus_embeddings/{class1,class2}/{embeddings,plots,reports}
 
 # Step 2: Download HLA data
-python scripts/update_imgt.py --verbose
+python -m hlaprotbert.scripts.update_imgt --verbose
 
 # Step 3: Generate embeddings
-python scripts/generate_embeddings.py --encoder-type protbert --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --verbose
 
 # Step 4: Create visualizations
-python scripts/encode_sequences.py --encoder-type protbert --verbose
+python -m hlaprotbert.scripts.encode_sequences --encoder-type protbert --verbose
 
 # Step 5: Run locus-specific analysis
-python scripts/run_locus_analysis.py --class1-only --verbose
-python scripts/run_locus_analysis.py --class2-only --verbose
+python -m hlaprotbert.scripts.run_locus_analysis --class1-only --verbose
+python -m hlaprotbert.scripts.run_locus_analysis --class2-only --verbose
 ```
 
 ## Usage Examples
@@ -412,7 +429,7 @@ python scripts/run_locus_analysis.py --class2-only --verbose
 ### Example 1: Encoding Specific Alleles
 
 ```python
-from src.models.encoders import ProtBERTEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder
 
 # Initialize encoder
 encoder = ProtBERTEncoder(
@@ -445,7 +462,7 @@ python examples/donor_matching.py \
 echo -e "A*01:01\nA*02:01\nA*03:01\nB*07:02\nB*08:01" > alleles.txt
 
 # Generate embeddings for alleles in file
-python scripts/generate_embeddings.py \
+python -m hlaprotbert.scripts.generate_embeddings \
     --encoder-type protbert \
     --allele-file alleles.txt \
     --verbose
@@ -455,7 +472,7 @@ python scripts/generate_embeddings.py \
 
 ```python
 # Run visualization script
-python scripts/analyze_locus_embeddings.py \
+python -m hlaprotbert.scripts.analyze_locus_embeddings \
     --locus A \
     --output-dir data/analysis/locus_embeddings/class1 \
     --verbose
@@ -466,7 +483,7 @@ python scripts/analyze_locus_embeddings.py \
 ### update_imgt.py - Download HLA Sequences
 
 ```bash
-python scripts/update_imgt.py [options]
+python -m hlaprotbert.scripts.update_imgt [options]
 
 Options:
   --config FILE         Path to configuration file
@@ -478,7 +495,7 @@ Options:
 ### generate_embeddings.py - Generate Protein Embeddings
 
 ```bash
-python scripts/generate_embeddings.py [options]
+python -m hlaprotbert.scripts.generate_embeddings [options]
 
 Required:
   --encoder-type {protbert,esm}   Encoder model to use
@@ -501,7 +518,7 @@ Optional:
 ### encode_sequences.py - Process and Visualize
 
 ```bash
-python scripts/encode_sequences.py [options]
+python -m hlaprotbert.scripts.encode_sequences [options]
 
 Required:
   --encoder-type {protbert,esm}   Encoder model to use
@@ -520,7 +537,7 @@ Optional:
 ### run_locus_analysis.py - Locus-Specific Analysis
 
 ```bash
-python scripts/run_locus_analysis.py [options]
+python -m hlaprotbert.scripts.run_locus_analysis [options]
 
 Options:
   --class1-only         Analyze only Class I loci (A, B, C)
@@ -592,7 +609,7 @@ export HLA_CACHE_DIR="/custom/path/embeddings"
 export HLA_RAW_DIR="/custom/path/raw"
 
 # Method 3: Configuration file
-from src.utils.config import ConfigManager
+from hlaprotbert.utils.config import ConfigManager
 config = ConfigManager(config_path="custom_config.yaml")
 config.set("data.embeddings_dir", "/custom/path/embeddings")
 ```
@@ -620,16 +637,16 @@ See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more configuration op
 2. **Out of Memory Errors**
    ```bash
    # Reduce batch size
-   python scripts/generate_embeddings.py --encoder-type protbert --all --batch-size 4
+   python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --batch-size 4
    
    # Use CPU instead of GPU
-   python scripts/generate_embeddings.py --encoder-type protbert --all --device cpu
+   python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --device cpu
    ```
 
 3. **IMGT/HLA Download Issues**
    ```bash
    # Check connection and retry
-   python scripts/update_imgt.py --force --verbose
+   python -m hlaprotbert.scripts.update_imgt --force --verbose
    
    # Manual download from https://www.ebi.ac.uk/ipd/imgt/hla/
    ```
@@ -687,5 +704,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [ProtTrans](https://github.com/agemagician/ProtTrans) for pre-trained protein language models
 - [ESM](https://github.com/facebookresearch/esm) for evolutionary scale modeling
 - [Hugging Face](https://huggingface.co/) for model hosting and transformers library
-
-./run_complete_pipeline_all_encoders.sh --ankh-backend ankh --disable-ssl-verify

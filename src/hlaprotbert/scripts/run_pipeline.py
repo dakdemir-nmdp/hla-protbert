@@ -23,7 +23,7 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.utils.logging import setup_logging
+from hlaprotbert.utils.logging import setup_logging
 
 def run_command(cmd, description=None):
     """Run a command and return the exit code"""

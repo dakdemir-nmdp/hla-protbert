@@ -8,7 +8,7 @@ import tempfile
 import pickle
 from pathlib import Path
 from unittest.mock import Mock, MagicMock
-from src.analysis.matching import MatchingAnalyzer
+from hlaprotbert.analysis.matching import MatchingAnalyzer
 
 
 class MockEncoder:

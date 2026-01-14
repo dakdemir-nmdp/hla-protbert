@@ -36,7 +36,7 @@ from sklearn.manifold import TSNE
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.models.encoders import ProtBERTEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder
 
 
 def get_embeddings_with_pooling(encoder_class, sequence_file, alleles, pooling_strategy):

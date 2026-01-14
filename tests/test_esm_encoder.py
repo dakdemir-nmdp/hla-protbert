@@ -31,15 +31,8 @@ class MockESM:
 
 
 # Apply mocks before importing the module
-sys.modules['torch'] = MagicMock()
-sys.modules['transformers'] = MagicMock()
-sys.modules['transformers'].AutoTokenizer = MagicMock()
-sys.modules['transformers'].AutoModel = MagicMock()
-sys.modules['transformers'].logging = MagicMock()
-sys.modules['huggingface_hub'] = MagicMock()
-sys.modules['huggingface_hub'].login = MagicMock()
 
-from src.models.encoders.esm import ESMEncoder
+from hlaprotbert.models.encoders.esm import ESMEncoder
 
 class TestESMEncoder:
     """Tests for ESMEncoder"""
@@ -140,8 +133,8 @@ class TestESMEncoder:
         # Store original CURL_CA_BUNDLE if it exists
         original_curl_ca = os.environ.get('CURL_CA_BUNDLE')
 
-        with patch('src.models.encoders.esm.AutoTokenizer') as mock_tokenizer_class, \
-             patch('src.models.encoders.esm.AutoModel') as mock_model_class:
+        with patch('hlaprotbert.models.encoders.esm.AutoTokenizer') as mock_tokenizer_class, \
+             patch('hlaprotbert.models.encoders.esm.AutoModel') as mock_model_class:
 
             # Setup mocks
             mock_tokenizer = MagicMock()

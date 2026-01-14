@@ -212,7 +212,7 @@ with tempfile.NamedTemporaryFile(mode='wb', suffix='.pkl', delete=False) as f:
     pickle.dump(test_sequences, f)
 
 try:
-    from src.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
+    from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
     
     print("\n--- Testing ProtBERT encoding ---")
     encoder = ProtBERTEncoder(temp_file, device='cpu')
@@ -299,11 +299,11 @@ main() {
     echo "   ./run_complete_pipeline_all_encoders.sh"
     echo ""
     echo "2. Or test individual encoders:"
-    echo "   python scripts/generate_embeddings.py --encoder-type protbert --all"
-    echo "   python scripts/generate_embeddings.py --encoder-type esm --all"
-    echo "   python scripts/generate_embeddings.py --encoder-type prott5 --all"
-    echo "   python scripts/generate_embeddings.py --encoder-type ankh-base --all"
-    echo "   python scripts/generate_embeddings.py --encoder-type ankh-large --all"
+    echo "   python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all"
+    echo "   python -m hlaprotbert.scripts.generate_embeddings --encoder-type esm --all"
+    echo "   python -m hlaprotbert.scripts.generate_embeddings --encoder-type prott5 --all"
+    echo "   python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all"
+    echo "   python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-large --all"
     echo ""
     echo "3. Compare encoders:"
     echo "   python examples/multi_encoder_comparison.py --alleles A*01:01 A*02:01 --benchmark"

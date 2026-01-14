@@ -15,10 +15,9 @@ from unittest.mock import patch, MagicMock
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Mock the relevant modules
-sys.modules['torch'] = MagicMock()
-sys.modules['transformers'] = MagicMock()
 
-from scripts.generate_embeddings import load_alleles_from_file
+
+from hlaprotbert.scripts.generate_embeddings import load_alleles_from_file
 
 class TestGenerateEmbeddings:
     """Tests for generate_embeddings.py functions"""

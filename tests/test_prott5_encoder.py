@@ -16,15 +16,8 @@ from unittest.mock import patch, MagicMock
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Mock the transformers and torch imports for testing
-sys.modules['torch'] = MagicMock()
-sys.modules['transformers'] = MagicMock()
-sys.modules['transformers'].T5Tokenizer = MagicMock()
-sys.modules['transformers'].T5EncoderModel = MagicMock()
-sys.modules['transformers'].logging = MagicMock()
-sys.modules['huggingface_hub'] = MagicMock()
-sys.modules['huggingface_hub'].login = MagicMock()
 
-from src.models.encoders.prott5 import ProtT5Encoder
+from hlaprotbert.models.encoders.prott5 import ProtT5Encoder
 
 
 class TestProtT5Encoder:

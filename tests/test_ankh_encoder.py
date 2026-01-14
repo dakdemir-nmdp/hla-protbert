@@ -9,6 +9,7 @@ import pytest
 import pickle
 import tempfile
 import numpy as np
+import importlib.util
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -16,16 +17,8 @@ from unittest.mock import patch, MagicMock
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Mock the transformers and torch imports for testing
-sys.modules['torch'] = MagicMock()
-sys.modules['transformers'] = MagicMock()
-sys.modules['transformers'].AutoTokenizer = MagicMock()
-sys.modules['transformers'].AutoModel = MagicMock()
-sys.modules['transformers'].logging = MagicMock()
-sys.modules['huggingface_hub'] = MagicMock()
-sys.modules['huggingface_hub'].login = MagicMock()
-sys.modules['ankh'] = MagicMock()
 
-from src.models.encoders.ankh import AnkhEncoder
+from hlaprotbert.models.encoders.ankh import AnkhEncoder
 
 
 class TestAnkhEncoder:
@@ -131,7 +124,11 @@ class TestAnkhEncoder:
         """Ensure unsupported backend strings raise a ValueError."""
         with pytest.raises(ValueError, match="backend must be"):
             AnkhEncoder(sequence_file, cache_dir, backend="invalid")
-
+    
+    @pytest.mark.skipif(
+        "ankh" not in sys.modules and importlib.util.find_spec("ankh") is None,
+        reason="ankh package not installed"
+    )
     @patch.object(AnkhEncoder, '_load_model_with_native_package')
     def test_native_backend_loading(self, mock_native_loader, sequence_file, cache_dir):
         """Explicit ankh backend should only call the native loader."""
@@ -140,6 +137,10 @@ class TestAnkhEncoder:
         assert encoder.backend == "ankh"
         mock_native_loader.assert_called_once()
 
+    @pytest.mark.skipif(
+        "ankh" not in sys.modules and importlib.util.find_spec("ankh") is None,
+        reason="ankh package not installed"
+    )
     @patch.object(AnkhEncoder, '_load_model_with_native_package')
     @patch.object(AnkhEncoder, '_load_model_huggingface')
     def test_auto_backend_fallback(self, mock_hf_loader, mock_native_loader, sequence_file, cache_dir):

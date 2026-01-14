@@ -11,7 +11,7 @@ from pathlib import Path
 from scipy.spatial.distance import cosine, euclidean
 from sklearn.metrics.pairwise import cosine_similarity
 
-from src.models.encoders import ProtBERTEncoder, ESMEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder
 
 # Test alleles representing different biological relationships
 RELATED_ALLELES_A = ["A*01:01", "A*01:02", "A*01:03"]  # Same serotype, different subtypes
@@ -128,8 +128,8 @@ class TestEmbeddingBiologicalValidity:
         
         # ProtBERT should be 768-dim
         if isinstance(encoder, ProtBERTEncoder):
-            assert dims[0] == 768, \
-                f"ProtBERT embeddings should be 768-dim, got {dims[0]}"
+            assert dims[0] == 1024, \
+                f"ProtBERT embeddings should be 1024-dim, got {dims[0]}"
     
     def test_embedding_values_are_bounded(self, encoder):
         """Test that embedding values are in reasonable range (not NaN, not extreme)."""
@@ -168,7 +168,8 @@ class TestPeptideBindingRegionExtraction:
             pytest.skip("Sequence file not found")
         return ProtBERTEncoder(
             sequence_file=str(sequence_file),
-            use_peptide_binding_region=True
+            use_peptide_binding_region=True,
+            locus="A"
         )
     
     def test_pbr_differs_from_full_sequence(self, encoder_full, encoder_pbr):
@@ -235,12 +236,9 @@ class TestAlleleResolutionFallback:
     def test_missing_allele_returns_none_or_raises(self, encoder):
         """Test that completely missing alleles are handled gracefully."""
         # Use a clearly fake allele
-        result = encoder.get_embedding("Z*99:99")
-        
-        # Should either return None or raise an informative error
-        # Current implementation returns None
-        assert result is None, \
-            "Missing alleles should return None or raise informative error"
+        # Should raise ValueError
+        with pytest.raises(ValueError, match="No sequence found"):
+            encoder.get_embedding("Z*99:99")
 
 
 class TestEncoderConsistency:

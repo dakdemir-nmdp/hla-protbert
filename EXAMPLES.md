@@ -42,10 +42,10 @@ Download HLA sequence data from IMGT/HLA database:
 
 ```bash
 # Download raw sequence data
-python scripts/download_imgt_data.py --output-dir data/raw/fasta
+python -m hlaprotbert.scripts.download_imgt_data --output-dir data/raw/fasta
 
 # Process downloaded data
-python scripts/imgt_parser.py --input-dir data/raw/fasta --output-file data/processed/hla_sequences.pkl
+python -m hlaprotbert.scripts.imgt_parser --input-dir data/raw/fasta --output-file data/processed/hla_sequences.pkl
 ```
 
 ## Embeddings Generation Pipeline
@@ -54,10 +54,10 @@ Generate embeddings for all HLA loci using ProtBERT and/or ESM models:
 
 ```bash
 # Generate ProtBERT embeddings for all loci
-python scripts/generate_embeddings.py --encoder-type protbert --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --verbose
 
 # Generate ESM embeddings for all loci (optional)
-python scripts/generate_embeddings.py --encoder-type esm --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type esm --all --verbose
 
 # Copy embeddings to locus-specific directories for analysis
 python -c "
@@ -98,18 +98,18 @@ Generate visualizations for all loci:
 
 ```bash
 # Run locus analysis for Class I loci
-python scripts/run_locus_analysis.py --class1-only --debug
+python -m hlaprotbert.scripts.run_locus_analysis --class1-only --debug
 
 # Run locus analysis for Class II loci
-python scripts/run_locus_analysis.py --class2-only --debug
+python -m hlaprotbert.scripts.run_locus_analysis --class2-only --debug
 
 # Alternative: manually generate visualizations for each locus
-python scripts/analyze_locus_embeddings.py --locus A --output-dir data/analysis/locus_embeddings/class1 --verbose
-python scripts/analyze_locus_embeddings.py --locus B --output-dir data/analysis/locus_embeddings/class1 --verbose
-python scripts/analyze_locus_embeddings.py --locus C --output-dir data/analysis/locus_embeddings/class1 --verbose
-python scripts/analyze_locus_embeddings.py --locus DRB1 --output-dir data/analysis/locus_embeddings/class2 --verbose
-python scripts/analyze_locus_embeddings.py --locus DQB1 --output-dir data/analysis/locus_embeddings/class2 --verbose
-python scripts/analyze_locus_embeddings.py --locus DPB1 --output-dir data/analysis/locus_embeddings/class2 --verbose
+python -m hlaprotbert.scripts.analyze_locus_embeddings --locus A --output-dir data/analysis/locus_embeddings/class1 --verbose
+python -m hlaprotbert.scripts.analyze_locus_embeddings --locus B --output-dir data/analysis/locus_embeddings/class1 --verbose
+python -m hlaprotbert.scripts.analyze_locus_embeddings --locus C --output-dir data/analysis/locus_embeddings/class1 --verbose
+python -m hlaprotbert.scripts.analyze_locus_embeddings --locus DRB1 --output-dir data/analysis/locus_embeddings/class2 --verbose
+python -m hlaprotbert.scripts.analyze_locus_embeddings --locus DQB1 --output-dir data/analysis/locus_embeddings/class2 --verbose
+python -m hlaprotbert.scripts.analyze_locus_embeddings --locus DPB1 --output-dir data/analysis/locus_embeddings/class2 --verbose
 ```
 
 ## Running Jupyter Notebooks
@@ -143,13 +143,13 @@ mkdir -p data/raw/fasta data/processed data/embeddings/{protbert,esm} \
   data/analysis/locus_embeddings/logs
 
 echo "Downloading HLA sequence data..."
-python scripts/download_imgt_data.py --output-dir data/raw/fasta
+python -m hlaprotbert.scripts.download_imgt_data --output-dir data/raw/fasta
 
 echo "Processing downloaded data..."
-python scripts/imgt_parser.py --input-dir data/raw/fasta --output-file data/processed/hla_sequences.pkl
+python -m hlaprotbert.scripts.imgt_parser --input-dir data/raw/fasta --output-file data/processed/hla_sequences.pkl
 
 echo "Generating ProtBERT embeddings for all loci..."
-python scripts/generate_embeddings.py --encoder-type protbert --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --verbose
 
 echo "Copying embeddings to locus-specific directories..."
 for locus in A B C; do
@@ -161,10 +161,10 @@ for locus in DRB1 DQB1 DPB1; do
 done
 
 echo "Running analysis for Class I loci..."
-python scripts/run_locus_analysis.py --class1-only --debug
+python -m hlaprotbert.scripts.run_locus_analysis --class1-only --debug
 
 echo "Running analysis for Class II loci..."
-python scripts/run_locus_analysis.py --class2-only --debug
+python -m hlaprotbert.scripts.run_locus_analysis --class2-only --debug
 
 echo "Pipeline complete\! You can now run the Jupyter notebooks."
 ```

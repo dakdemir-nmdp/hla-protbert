@@ -17,7 +17,7 @@ This will install:
 ### ProtT5 Encoder
 
 ```python
-from src.models.encoders import ProtT5Encoder
+from hlaprotbert.models.encoders import ProtT5Encoder
 
 # Initialize encoder
 encoder = ProtT5Encoder(
@@ -38,7 +38,7 @@ print(f"Encoded {len(embeddings)} alleles")
 ### Ankh Encoder (Base - Fast)
 
 ```python
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 
 # Initialize with base model (50M params, very fast)
 encoder = AnkhEncoder(
@@ -54,7 +54,7 @@ print(f"Ankh Base embedding shape: {embedding.shape}")  # (768,)
 ### Ankh Encoder (Large - Accurate)
 
 ```python
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 
 # Initialize with large model (650M params, higher accuracy)
 encoder = AnkhEncoder(
@@ -73,23 +73,23 @@ print(f"Ankh Large embedding shape: {embedding.shape}")  # (1536,)
 
 ```bash
 # Download sequences first (if not already done)
-python scripts/update_imgt.py --verbose
+python -m hlaprotbert.scripts.update_imgt --verbose
 
 # Generate ProtT5 embeddings for all alleles
-python scripts/generate_embeddings.py --encoder-type prott5 --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type prott5 --all --verbose
 
 # Generate for specific locus only
-python scripts/generate_embeddings.py --encoder-type prott5 --locus A --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type prott5 --locus A --all
 ```
 
 ### Generate embeddings with Ankh
 
 ```bash
 # Ankh Base (fast)
-python scripts/generate_embeddings.py --encoder-type ankh-base --all --verbose
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all --verbose
 
 # Ankh Large (accurate)
-python scripts/generate_embeddings.py --encoder-type ankh-large --locus A --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-large --locus A --all
 ```
 
 ### Handling SSL certificate issues on locked-down networks
@@ -102,7 +102,7 @@ temporarily disable certificate verification:
 export HLA_DISABLE_SSL_VERIFY=1
 
 # Pass the flag explicitly when running the generator
-python scripts/generate_embeddings.py --encoder-type ankh-base --all --disable-ssl-verify
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all --disable-ssl-verify
 ```
 
 You can also set `network.verify_ssl: false` inside your config file if the same
@@ -114,7 +114,7 @@ package and let the encoder use it directly:
 
 ```bash
 python -m pip install ankh
-python scripts/generate_embeddings.py --encoder-type ankh-base --all --ankh-backend ankh
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all --ankh-backend ankh
 ```
 
 Setting `model.ankh_backend: ankh` in your config makes this the default for
@@ -162,7 +162,7 @@ This will:
 ## 5. Advanced: Ensemble Embeddings
 
 ```python
-from src.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
 import numpy as np
 from sklearn.preprocessing import normalize
 
@@ -284,10 +284,10 @@ encoder = ProtT5Encoder(
 
 ```bash
 # 1. Download data
-python scripts/update_imgt.py
+python -m hlaprotbert.scripts.update_imgt
 
 # 2. Encode with fastest model
-python scripts/generate_embeddings.py --encoder-type ankh-base --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all
 
 # 3. Use in Python
 python examples/basic_encoding.py --alleles A*01:01 A*02:01 --encoder-type ankh-base
@@ -297,13 +297,13 @@ python examples/basic_encoding.py --alleles A*01:01 A*02:01 --encoder-type ankh-
 
 ```bash
 # 1. Download data
-python scripts/update_imgt.py
+python -m hlaprotbert.scripts.update_imgt
 
 # 2. Encode with all models
-python scripts/generate_embeddings.py --encoder-type protbert --all
-python scripts/generate_embeddings.py --encoder-type esm --all
-python scripts/generate_embeddings.py --encoder-type prott5 --all
-python scripts/generate_embeddings.py --encoder-type ankh-large --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type esm --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type prott5 --all
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-large --all
 
 # 3. Compare and create ensembles
 python examples/multi_encoder_comparison.py --alleles A*01:01 A*02:01 --ensemble
@@ -312,7 +312,7 @@ python examples/multi_encoder_comparison.py --alleles A*01:01 A*02:01 --ensemble
 ### Workflow 3: Production Deployment
 
 ```python
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 
 # Use Ankh Base for production (fastest, efficient)
 encoder = AnkhEncoder(

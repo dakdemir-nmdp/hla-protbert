@@ -17,9 +17,9 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
-from src.utils.logging import setup_logging
-from src.utils.config import ConfigManager
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
+from hlaprotbert.utils.logging import setup_logging
+from hlaprotbert.utils.config import ConfigManager
 
 def load_alleles_from_file(file_path: Path) -> List[str]:
     """Load alleles from file

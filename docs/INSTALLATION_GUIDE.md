@@ -14,7 +14,7 @@ This guide provides step-by-step instructions for installing and verifying HLA-P
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/hla-protbert.git
+git clone https://github.com/dakdemir-nmdp/hla-protbert.git
 cd hla-protbert
 ```
 
@@ -102,35 +102,35 @@ python -c "import sentencepiece; print(f'SentencePiece: {sentencepiece.__version
 
 # Test each encoder
 python -c "
-from src.models.encoders import ProtBERTEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder
 encoder = ProtBERTEncoder()
 emb = encoder.get_embedding('A*01:01')
 print(f'ProtBERT works! Embedding shape: {emb.shape}')
 "
 
 python -c "
-from src.models.encoders import ESMEncoder
+from hlaprotbert.models.encoders import ESMEncoder
 encoder = ESMEncoder()
 emb = encoder.get_embedding('A*01:01')
 print(f'ESM-2 works! Embedding shape: {emb.shape}')
 "
 
 python -c "
-from src.models.encoders import ProtT5Encoder
+from hlaprotbert.models.encoders import ProtT5Encoder
 encoder = ProtT5Encoder()
 emb = encoder.get_embedding('A*01:01')
 print(f'ProtT5 works! Embedding shape: {emb.shape}')
 "
 
 python -c "
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 encoder = AnkhEncoder(model_variant='base')
 emb = encoder.get_embedding('A*01:01')
 print(f'Ankh Base works! Embedding shape: {emb.shape}')
 "
 
 python -c "
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 encoder = AnkhEncoder(model_variant='large')
 emb = encoder.get_embedding('A*01:01')
 print(f'Ankh Large works! Embedding shape: {emb.shape}')
@@ -187,7 +187,7 @@ validation during Hugging Face downloads. You have two options:
    ./run_complete_pipeline_all_encoders.sh --disable-ssl-verify
 
    # Or when invoking the generator directly
-   python scripts/generate_embeddings.py --encoder-type ankh-base --all --disable-ssl-verify
+   python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all --disable-ssl-verify
    ```
 
    You can also set `network.verify_ssl: false` in your config file if you always
@@ -205,7 +205,7 @@ If your network policies block Hugging Face entirely, install the official
 python -m pip install ankh
 
 # CLI flag (applied per run)
-python scripts/generate_embeddings.py --encoder-type ankh-base --all --ankh-backend ankh
+python -m hlaprotbert.scripts.generate_embeddings --encoder-type ankh-base --all --ankh-backend ankh
 
 # Pipeline helper
 ./run_complete_pipeline_all_encoders.sh --disable-ssl-verify  # optional
@@ -296,7 +296,7 @@ python examples/multi_encoder_comparison.py \
 # Expected output:
 # Encoder        | Embed Dim | Time (s)
 # ---------------|-----------|----------
-# ProtBERT       | 768       | 0.124
+# ProtBERT       | 1024      | 0.124
 # ESM-2          | 1280      | 0.156
 # ProtT5         | 1024      | 0.189
 # Ankh Base      | 768       | 0.098

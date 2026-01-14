@@ -249,12 +249,12 @@ Structure-aware encoder is considered successful if:
 
 ```python
 # Sequence-only (existing)
-from src.models.encoders import ESMEncoder
+from hlaprotbert.models.encoders import ESMEncoder
 encoder = ESMEncoder("sequences.pkl")
 embedding = encoder.get_embedding("A*01:01")  # 1280-dim
 
 # Structure-aware (new)
-from src.models.encoders import StructureAwareEncoder
+from hlaprotbert.models.encoders import StructureAwareEncoder
 encoder = StructureAwareEncoder(
     sequence_file="sequences.pkl",
     sequence_encoder="esm",  # Use ESM for sequence part

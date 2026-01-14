@@ -264,7 +264,7 @@ Compute Manhattan distance between two vectors.
 
 ```python
 from pathlib import Path
-from src.models.encoder import HLAEncoder
+from hlaprotbert.models.encoder import HLAEncoder
 
 # Create a custom encoder subclass
 class MyHLAEncoder(HLAEncoder):

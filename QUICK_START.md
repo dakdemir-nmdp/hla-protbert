@@ -26,8 +26,8 @@ python examples/multi_encoder_comparison.py \
 
 ### Before You Start
 ```bash
-# Make sure you're in the project directory
-cd /Users/dakdemir/Library/CloudStorage/OneDrive-NMDP/Year2025/Github/hla-protbert
+# Navigate to the project directory
+cd path/to/hla-protbert
 
 # Activate venv (you should see (venv) in your prompt after this)
 source venv/bin/activate
@@ -63,7 +63,7 @@ All encoders are installed and working correctly.
 **What this does:**
 - Downloads HLA sequences from IMGT/HLA database
 - Generates embeddings with all 5 encoders:
-  - ProtBERT (768-dim)
+  - ProtBERT (1024-dim)
   - ESM-2 (1280-dim)
   - ProtT5 (1024-dim)
   - Ankh Base (768-dim)
@@ -127,7 +127,7 @@ pytest tests/ -v --tb=short
 
 # If specific encoder fails, test individually
 python -c "
-from src.models.encoders import ProtBERTEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder
 encoder = ProtBERTEncoder()
 print('ProtBERT works:', encoder.get_embedding('A*01:01').shape)
 "
@@ -148,7 +148,7 @@ print('ProtBERT works:', encoder.get_embedding('A*01:01').shape)
 
 ### Example 1: Encode a Single Allele
 ```python
-from src.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, ProtT5Encoder, AnkhEncoder
 
 # Pick any encoder
 encoder = ProtT5Encoder()
@@ -158,7 +158,7 @@ print(f"Embedding shape: {embedding.shape}")  # (1024,)
 
 ### Example 2: Encode Multiple Alleles
 ```python
-from src.models.encoders import AnkhEncoder
+from hlaprotbert.models.encoders import AnkhEncoder
 
 encoder = AnkhEncoder(model_variant='large')
 alleles = ["A*01:01", "A*02:01", "B*07:02", "B*08:01"]

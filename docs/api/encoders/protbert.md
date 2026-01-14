@@ -172,7 +172,7 @@ HLADataset(sequences, labels, tokenizer, max_length=512)
 
 ```python
 from pathlib import Path
-from src.models.protbert import ProtBERTEncoder
+from hlaprotbert.models.protbert import ProtBERTEncoder
 
 # Initialize encoder
 encoder = ProtBERTEncoder(

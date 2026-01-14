@@ -10,8 +10,8 @@ Dependencies:
   - seaborn
   - scikit-learn
   - umap-learn
-  - (Project-specific) src.models.encoder: must provide an encode_fasta function.
-  - (Optional) src.data.imgt_downloader: if download_data function is available for data download.
+  - (Project-specific) hlaprotbert.models.encoder: must provide an encode_fasta function.
+  - (Optional) hlaprotbert.data.imgt_downloader: if download_data function is available for data download.
 
 Usage:
   python scripts/download_and_encode.py --data-dir data/raw --output-dir data/processed

@@ -40,16 +40,9 @@ class MockDataset:
         return {}
 
 mock_torch.utils.data.Dataset = MockDataset
-sys.modules['torch'] = mock_torch
-sys.modules['transformers'] = MagicMock()
-sys.modules['transformers'].BertModel = MagicMock()
-sys.modules['transformers'].BertTokenizer = MagicMock()
-sys.modules['transformers'].BertForSequenceClassification = MagicMock()
-sys.modules['transformers'].TrainingArguments = MagicMock()
-sys.modules['transformers'].Trainer = MagicMock()
 
 # Import the module after mocking
-from src.models.encoders.protbert import ProtBERTEncoder, HLADataset
+from hlaprotbert.models.encoders.protbert import ProtBERTEncoder, HLADataset
 
 class TestProtBERTEncoder:
     """Tests for ProtBERTEncoder"""
@@ -175,7 +168,7 @@ class TestProtBERTEncoder:
         encoder.model.return_value = mock_output
 
         # Mock SequenceProcessor to verify it's imported and called correctly
-        with patch('src.data.sequence_utils.SequenceProcessor') as mock_processor_class:
+        with patch('hlaprotbert.data.sequence_utils.SequenceProcessor') as mock_processor_class:
             mock_processor = MagicMock()
             mock_processor.extract_peptide_binding_region.return_value = 'SHORTENED_SEQUENCE'
             mock_processor_class.return_value = mock_processor
@@ -200,8 +193,8 @@ class TestProtBERTEncoder:
 
         Fixes critical bug: src/models/encoders/protbert.py lines 129-140
         """
-        with patch('src.models.encoders.protbert.BertTokenizer') as mock_tokenizer_class, \
-             patch('src.models.encoders.protbert.BertModel') as mock_model_class:
+        with patch('hlaprotbert.models.encoders.protbert.BertTokenizer') as mock_tokenizer_class, \
+             patch('hlaprotbert.models.encoders.protbert.BertModel') as mock_model_class:
 
             # Setup mocks
             mock_tokenizer = MagicMock()

@@ -31,7 +31,7 @@ from sklearn.decomposition import PCA
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.models.encoders import ProtBERTEncoder, ESMEncoder
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, AnkhEncoder
 
 
 def extract_serotype(allele: str) -> str:
@@ -212,7 +212,7 @@ def main():
     parser.add_argument('--sequence-file', type=Path,
                        default=Path('./data/processed/hla_sequences.pkl'),
                        help='Path to HLA sequences')
-    parser.add_argument('--encoder', type=str, choices=['protbert', 'esm'],
+    parser.add_argument('--encoder', type=str, choices=['protbert', 'esm', 'ankh'],
                        default='protbert', help='Which encoder to use')
     parser.add_argument('--locus', type=str, default='A',
                        help='Which locus to classify (A, B, C, etc.)')
@@ -238,8 +238,10 @@ def main():
     print(f"Initializing {args.encoder} encoder...")
     if args.encoder == 'protbert':
         encoder = ProtBERTEncoder(sequence_file=str(args.sequence_file))
-    else:
+    elif args.encoder == 'esm':
         encoder = ESMEncoder(sequence_file=str(args.sequence_file))
+    elif args.encoder == 'ankh':
+        encoder = AnkhEncoder(sequence_file=str(args.sequence_file), model_variant="base")
     
     # Generate labeled dataset
     embeddings, labels, alleles = get_labeled_data(

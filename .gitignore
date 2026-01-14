@@ -1,12 +1,28 @@
-# Python
+# ===========================================
+# HLA-ProtBERT .gitignore
+# ===========================================
+
+# ---------- Python ----------
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# ---------- Virtual Environments ----------
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.python-version
+
+# ---------- Distribution / Packaging ----------
 build/
-develop-eggs/
 dist/
+develop-eggs/
 downloads/
 eggs/
 .eggs/
@@ -19,61 +35,32 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Environment
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-.python-version
+# ---------- Jupyter Notebooks ----------
+.ipynb_checkpoints/
+*.ipynb  # Exclude notebooks from package (keep in repo for development)
 
-# Jupyter Notebooks
-.ipynb_checkpoints
+# ---------- Testing ----------
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.pytest_cache/
+*.cover
 
-# Project specific data files
-data/raw/*
-data/processed/*
-data/embeddings/*
-# You can uncomment the following lines to keep specific data files
-# !data/raw/.gitkeep
-# !data/processed/.gitkeep
-# !data/embeddings/.gitkeep
-
-# IDE specific files
+# ---------- IDE / Editor ----------
 .idea/
 .vscode/
 *.swp
 *.swo
+*.sublime-workspace
+*.sublime-project
 
-# Distribution / packaging
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Logs
-logs/
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS specific
+# ---------- OS Specific ----------
 .DS_Store
 .DS_Store?
 ._*
@@ -82,20 +69,57 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 
-# Testing
-.coverage
-htmlcov/
-.tox/
-.nox/
-.hypothesis/
-.pytest_cache/
-coverage.xml
-*.cover
-.coverage.*
+# ---------- Logs ----------
+logs/
+*.log
 
-**/.claude/settings.local.json
+# ---------- Project Data (User-Generated) ----------
+# Users download their own data - don't include in repo
+data/raw/*
+data/processed/*
+data/embeddings/*
+data/analysis/*
 
-CLAUDE.md
+# Keep directory structure with .gitkeep files
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/embeddings/.gitkeep
+!data/analysis/.gitkeep
 
+# ---------- Generated Reports / Outputs ----------
+*.pdf
+matching_report.*
+*.csv
+
+# ---------- Presentations (Internal) ----------
+presentations/
+
+# ---------- Notebooks (Large Output Files) ----------
+notebooks/
+
+# ---------- Benchmarks (Internal Development) ----------
+benchmarks/
+
+# ---------- Model Cache / Downloads ----------
+models/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# ---------- AI Assistant Config ----------
+.claude/
 .cursor/
 .github/
+CLAUDE.md
+
+# ---------- R Session ----------
+.Rhistory
+.RData
+.Rproj.user/
+
+# ---------- Misc ----------
+*.bak
+*.tmp
+*.temp
+.cache/

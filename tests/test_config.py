@@ -7,7 +7,7 @@ import tempfile
 import yaml
 import json
 from pathlib import Path
-from src.utils.config import ConfigManager
+from hlaprotbert.utils.config import ConfigManager
 
 
 class TestConfigManager:

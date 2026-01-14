@@ -9,7 +9,7 @@ Dependencies:
   - seaborn
   - scikit-learn
   - umap-learn
-  - (Project-specific) src.models.encoder: must provide an encode_fasta function.
+  - (Project-specific) hlaprotbert.models.encoder: must provide an encode_fasta function.
 
 Usage:
   python scripts/encode_sequences.py --encoder-type [protbert|esm3] --data-dir data/raw --output-dir data/processed
@@ -34,9 +34,9 @@ project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
 # Import project modules
-from src.models.encoders import ProtBERTEncoder, ESMEncoder
-from src.utils.logging import setup_logging
-from src.utils.config import ConfigManager
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder
+from hlaprotbert.utils.logging import setup_logging
+from hlaprotbert.utils.config import ConfigManager
 
 def parse_fasta(fasta_file):
     """Parse a FASTA file and return sequences and headers"""

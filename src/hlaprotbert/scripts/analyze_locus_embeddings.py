@@ -26,11 +26,11 @@ sys.path.insert(0, str(project_dir))
 
 # Import our modules
 try:
-    from src.models.encoders import ProtBERTEncoder, ESMEncoder # Import both
-    from src.models.encoder import HLAEncoder # Import base class for type hinting
-    from src.analysis.visualization import HLAEmbeddingVisualizer
-    from src.utils.logging import setup_logging
-    from src.utils.config import ConfigManager
+    from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder # Import both
+    from hlaprotbert.models.encoder import HLAEncoder # Import base class for type hinting
+    from hlaprotbert.analysis.visualization import HLAEmbeddingVisualizer
+    from hlaprotbert.utils.logging import setup_logging
+    from hlaprotbert.utils.config import ConfigManager
 except ImportError as e:
     print(f"Error importing modules: {e}")
     print("Make sure you're running the script from the project root directory.")

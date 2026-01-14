@@ -100,10 +100,10 @@ if [ -f "data/processed/hla_sequences.pkl" ]; then
     read -p "Re-download data? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        python scripts/update_imgt.py --verbose
+        python -m hlaprotbert.scripts.update_imgt --verbose
     fi
 else
-    python scripts/update_imgt.py --verbose
+    python -m hlaprotbert.scripts.update_imgt --verbose
 fi
 echo -e "${GREEN}✓ HLA sequences ready${NC}"
 
@@ -137,10 +137,10 @@ for i in "${!encoders[@]}"; do
         read -p "Regenerate embeddings? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            python scripts/generate_embeddings.py --encoder-type "$encoder" --all --force --verbose "${SSL_ARGS[@]}" "${ANKH_ARGS[@]}"
+            python -m hlaprotbert.scripts.generate_embeddings --encoder-type protbert --all --force --verbose "${SSL_ARGS[@]}" "${ANKH_ARGS[@]}"
         fi
     else
-        python scripts/generate_embeddings.py --encoder-type "$encoder" --all --verbose "${SSL_ARGS[@]}" "${ANKH_ARGS[@]}"
+        python -m hlaprotbert.scripts.generate_embeddings --encoder-type "$encoder" --all --verbose "${SSL_ARGS[@]}" "${ANKH_ARGS[@]}"
     fi
     
     echo -e "${GREEN}✓ $name embeddings complete${NC}"
@@ -175,10 +175,8 @@ for locus in DRB1 DQB1 DPB1; do
 done
 
 echo "Running analysis for Class I loci..."
-python scripts/run_locus_analysis.py --class1-only --debug 2>&1 | tee data/analysis/locus_embeddings/logs/class1_analysis.log || true
-
-echo "Running analysis for Class II loci..."
-python scripts/run_locus_analysis.py --class2-only --debug 2>&1 | tee data/analysis/locus_embeddings/logs/class2_analysis.log || true
+python -m hlaprotbert.scripts.run_locus_analysis --class1-only --debug 2>&1 | tee data/analysis/locus_embeddings/logs/class1_analysis.log || true
+python -m hlaprotbert.scripts.run_locus_analysis --class2-only --debug 2>&1 | tee data/analysis/locus_embeddings/logs/class2_analysis.log || true
 
 echo -e "${GREEN}✓ Analysis complete${NC}"
 

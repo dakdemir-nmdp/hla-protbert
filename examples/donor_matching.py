@@ -15,11 +15,11 @@ script_dir = Path(__file__).resolve().parent
 project_dir = script_dir.parent
 sys.path.insert(0, str(project_dir))
 
-from src.models.encoders import ProtBERTEncoder, ESMEncoder # Import both
-from src.models.encoder import HLAEncoder # Import base class for type hinting
-from src.analysis.matching import MatchingAnalyzer
-from src.utils.logging import setup_logging
-from src.utils.config import ConfigManager
+from hlaprotbert.models.encoders import ProtBERTEncoder, ESMEncoder, AnkhEncoder # Import all
+from hlaprotbert.models.encoder import HLAEncoder # Import base class for type hinting
+from hlaprotbert.analysis.matching import MatchingAnalyzer
+from hlaprotbert.utils.logging import setup_logging
+from hlaprotbert.utils.config import ConfigManager
 
 def main():
     """Main function demonstrating donor-recipient matching analysis"""
@@ -38,7 +38,7 @@ def main():
     parser.add_argument(
         "--encoder-type",
         type=str,
-        choices=["protbert", "esm"],
+        choices=["protbert", "esm", "ankh"],
         default="protbert",
         help="Type of encoder model to use ('protbert' or 'esm')"
     )
@@ -80,6 +80,8 @@ def main():
         cache_subdir = "protbert"
     elif args.encoder_type == "esm":
         cache_subdir = "esm"
+    elif args.encoder_type == "ankh":
+        cache_subdir = "ankh"
     else:
         cache_subdir = "default"
     
@@ -118,6 +120,10 @@ def main():
                 encoder_args["hf_token"] = hf_token
             if not args.model_name:
                  encoder_args["model_name"] = config.get("model.esm_model_name", "facebook/esm2_t33_650M_UR50D")
+        elif args.encoder_type == "ankh":
+            EncoderClass = AnkhEncoder
+            if not args.model_name:
+                 encoder_args["model_variant"] = "base"
         else:
             # This case should not be reached due to argparse choices
             raise ValueError(f"Unsupported encoder type: {args.encoder_type}")

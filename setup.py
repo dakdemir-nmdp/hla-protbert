@@ -9,13 +9,13 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="hlaprotbert",
-    version="0.2.0",
+    version="1.0.0",
     author="Deniz Akdemir",
     author_email="dakdemir@nmdp.org",
-    description="HLA allele encoding using protein language models (ProtBERT, ESM) for immunogenomics research",
+    description="HLA allele encoding using protein language models (ProtBERT, ESM, ProtT5, Ankh) for immunogenomics research",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/dakdemir-nmdp/hla-protbert.git",
+    url="https://github.com/dakdemir-nmdp/hla-protbert",
     project_urls={
         "Bug Tracker": "https://github.com/dakdemir-nmdp/hla-protbert/issues",
         "Documentation": "https://github.com/dakdemir-nmdp/hla-protbert/tree/main/docs",
@@ -27,6 +27,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
@@ -34,8 +35,9 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "Topic :: Scientific/Engineering :: Medical Science Apps.",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Natural Language :: English",
+        "Typing :: Typed",
     ],
     package_dir={"": "src"},
     packages=find_packages(where="src"),
@@ -44,7 +46,8 @@ setup(
         "numpy>=1.20.0",
         "pandas>=1.3.0",
         "torch>=1.7.0",
-        "transformers>=4.0.0",
+        "transformers>=4.30.0",
+        "sentencepiece>=0.1.99",
         "scikit-learn>=0.24.0",
         "matplotlib>=3.3.0",
         "seaborn>=0.11.0",
@@ -83,17 +86,17 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "hla-download-imgt=scripts.download_imgt_data:main",
-            "hla-update-imgt=scripts.update_imgt:main",
-            "hla-generate-embeddings=scripts.generate_embeddings:main",
-            "hla-analyze-locus=scripts.analyze_locus_embeddings:main",
+            "hla-download-imgt=hlaprotbert.scripts.download_imgt_data:main",
+            "hla-update-imgt=hlaprotbert.scripts.update_imgt:main",
+            "hla-generate-embeddings=hlaprotbert.scripts.generate_embeddings:main",
+            "hla-analyze-locus=hlaprotbert.scripts.analyze_locus_embeddings:main",
         ],
     },
     include_package_data=True,
     zip_safe=False,
     keywords=[
         "HLA", "immunogenetics", "protein language models", 
-        "ProtBERT", "ESM", "embeddings", "bioinformatics",
-        "transplantation", "histocompatibility"
+        "ProtBERT", "ESM", "ProtT5", "Ankh", "embeddings", "bioinformatics",
+        "transplantation", "histocompatibility", "deep learning"
     ],
 )
